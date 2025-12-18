@@ -3,7 +3,7 @@ import MagicBento from "./MagicBento";
 
 function Whatall() {
   return (
-    <div className="min-h-screen w-screen bg-[#1f1f1f] flex flex-col justify-center items-center py-4">
+    <div className="min-h-screen w-screen bg-[#fafbfc] flex flex-col justify-center items-center py-4">
      <div className="w-full max-w-7xl px-6">
           <MagicBento
             textAutoHide={true}

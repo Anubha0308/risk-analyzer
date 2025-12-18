@@ -8,37 +8,37 @@ const MOBILE_BREAKPOINT = 768;
 
 const cardData = [
   {
-    color: '#060010',
+    color: '#ffffff',
     title: 'Analytics',
     description: 'Track user behavior',
     label: 'Insights'
   },
   {
-    color: '#060010',
+    color: '#ffffff',
     title: 'Dashboard',
     description: 'Centralized data view',
     label: 'Overview'
   },
   {
-    color: '#060010',
+    color: '#ffffff',
     title: 'Collaboration',
     description: 'Work together seamlessly',
     label: 'Teamwork'
   },
   {
-    color: '#060010',
+    color: '#ffffff',
     title: 'Automation',
     description: 'Streamline workflows',
     label: 'Efficiency'
   },
   {
-    color: '#060010',
+    color: '#ffffff',
     title: 'Integration',
     description: 'Connect favorite tools',
     label: 'Connectivity'
   },
   {
-    color: '#060010',
+    color: '#ffffff',
     title: 'Security',
     description: 'Enterprise-grade protection',
     label: 'Protection'
@@ -497,12 +497,12 @@ const MagicBento = ({
             --glow-intensity: 0;
             --glow-radius: 200px;
             --glow-color: ${glowColor};
-            --border-color: #392e4e;
-            --background-dark: #060010;
+            --border-color: #c4c7ca;
+            --background-dark: #fafbfc;
             --white: hsl(0, 0%, 100%);
-            --purple-primary: rgba(132, 0, 255, 1);
-            --purple-glow: rgba(132, 0, 255, 0.2);
-            --purple-border: rgba(132, 0, 255, 0.8);
+            --purple-primary: rgba(48, 155, 237, 1);
+            --purple-glow: rgba(144, 194, 249, 0.2);
+            --purple-border: rgba(48, 155, 237, 0.8);
           }
           
           .card-responsive {
@@ -566,7 +566,7 @@ const MagicBento = ({
           }
           
           .card--border-glow:hover {
-            box-shadow: 0 4px 20px rgba(46, 24, 78, 0.4), 0 0 30px rgba(${glowColor}, 0.2);
+            box-shadow: 0 8px 24px rgba(33, 35, 42, 0.12);
           }
           
           .particle::before {
@@ -582,7 +582,7 @@ const MagicBento = ({
           }
           
           .particle-container:hover {
-            box-shadow: 0 4px 20px rgba(46, 24, 78, 0.2), 0 0 30px rgba(${glowColor}, 0.2);
+            box-shadow: 0 8px 24px rgba(33, 35, 42, 0.12);
           }
           
           .text-clamp-1 {
@@ -638,7 +638,7 @@ const MagicBento = ({
             const cardStyle = {
               backgroundColor: card.color || 'var(--background-dark)',
               borderColor: 'var(--border-color)',
-              color: 'var(--white)',
+              color: '#3d4453',
               '--glow-x': '50%',
               '--glow-y': '50%',
               '--glow-intensity': '0',
@@ -657,10 +657,10 @@ const MagicBento = ({
                   enableTilt={enableTilt}
                   clickEffect={clickEffect}
                   enableMagnetism={enableMagnetism}>
-                  <div className="card__header flex justify-between gap-3 relative text-white">
+                  <div className="card__header flex justify-between gap-3 relative">
                     <span className="card__label text-base">{card.label}</span>
                   </div>
-                  <div className="card__content flex flex-col relative text-white">
+                  <div className="card__content flex flex-col relative">
                     <h3
                       className={`card__title font-normal text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`}>
                       {card.title}
@@ -784,10 +784,10 @@ const MagicBento = ({
                   el.addEventListener('mouseleave', handleMouseLeave);
                   el.addEventListener('click', handleClick);
                 }}>
-                <div className="card__header flex justify-between gap-3 relative text-white">
+                <div className="card__header flex justify-between gap-3 relative">
                   <span className="card__label text-base">{card.label}</span>
                 </div>
-                <div className="card__content flex flex-col relative text-white">
+                <div className="card__content flex flex-col relative">
                   <h3
                     className={`card__title font-normal text-base m-0 mb-1 ${textAutoHide ? 'text-clamp-1' : ''}`}>
                     {card.title}

@@ -9,8 +9,8 @@ function Home() {
   const items = [
     {
       label: "About",
-      bgColor: "#0D0716",
-      textColor: "#fff",
+      bgColor: "#ffffff",
+      textColor: "#3d4453",
       links: [
         { label: "Company", ariaLabel: "About Company" },
         { label: "Careers", ariaLabel: "About Careers" },
@@ -18,8 +18,8 @@ function Home() {
     },
     {
       label: "Projects",
-      bgColor: "#170D27",
-      textColor: "#fff",
+      bgColor: "#f1f4f9",
+      textColor: "#3d4453",
       links: [
         { label: "Featured", ariaLabel: "Featured Projects" },
         { label: "Case Studies", ariaLabel: "Project Case Studies" },
@@ -27,8 +27,8 @@ function Home() {
     },
     {
       label: "Contact",
-      bgColor: "#271E37",
-      textColor: "#fff",
+      bgColor: "#e6eef9",
+      textColor: "#3d4453",
       links: [
         { label: "Email", ariaLabel: "Email us" },
         { label: "Twitter", ariaLabel: "Twitter" },
@@ -37,16 +37,16 @@ function Home() {
     },
   ];
   return (
-    <div className="min-h-screen w-screen bg-[#1f1f1f] flex flex-col">
+    <div className="min-h-screen w-screen bg-[#fafbfc] flex flex-col">
       <header className="w-full flex justify-center pt-4">
         <CardNav
           logo={defaultLogo}
           logoAlt="Logo"
           items={items}
-          baseColor="#fff"
-          menuColor="#000"
-          buttonBgColor="#111"
-          buttonTextColor="#fff"
+          baseColor="#3d4453"
+          menuColor="#3d4453"
+          buttonBgColor="#309bed"
+          buttonTextColor="#fafbfc"
           ease="power3.out"
         />
       </header>
