@@ -3,7 +3,12 @@ import TextPressure from "./TextPressure.jsx";
 
 function Register() {
   return (
-    <div className="register-container w-full min-h-screen bg-neutral-primary overflow-x-hidden flex flex-col items-center justify-center">
+    <div
+      className="register-container w-full min-h-screen bg-neutral-primary overflow-x-hidden flex flex-col items-center justify-center"
+      style={{
+        background: "#f6f2f3ff",
+      }}
+    >
       <div
         style={{
           position: "relative",
@@ -23,7 +28,7 @@ function Register() {
           width={true}
           weight={true}
           italic={true}
-          textColor="#ffffff"
+          textColor="#3d4453ff"
           strokeColor="#ff0000"
           minFontSize={140} 
         />
@@ -34,14 +39,20 @@ function Register() {
           <div className="mb-5">
             <label
               htmlFor="email"
-              className="block mb-2.5 text-sm font-medium text-heading"
+              className="block mb-2.5 text-sm font-medium"
+              style={{ color: "#3d4453ff" }}
             >
               Your email
             </label>
             <input
               type="email"
               id="email"
-              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+              className="bg-neutral-secondary-medium border border-default-medium text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+              style={{
+                backgroundColor: "#f7f9fbff",
+                borderColor: "#a8a4abff",
+                color: "#3d4453ff",
+              }}
               placeholder="name@flowbite.com"
               required
             />
@@ -49,14 +60,20 @@ function Register() {
           <div className="mb-5">
             <label
               htmlFor="password"
-              className="block mb-2.5 text-sm font-medium text-heading"
+              className="block mb-2.5 text-sm font-medium"
+              style={{ color: "#3d4453ff" }}
             >
               Your password
             </label>
             <input
               type="password"
               id="password"
-              className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body"
+              className="bg-neutral-secondary-medium border border-default-medium text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
+              style={{
+                backgroundColor: "#f7f9fbff",
+                borderColor: "#a8a4abff",
+                color: "#3d4453ff",
+              }}
               placeholder="••••••••"
               required
             />
@@ -67,11 +84,22 @@ function Register() {
               type="checkbox"
               value=""
               className="w-4 h-4 border border-default-medium rounded-xs bg-neutral-secondary-medium focus:ring-2 focus:ring-brand-soft"
+              style={{
+                borderColor: "#a8a4abff",
+                backgroundColor: "#f7f9fbff",
+              }}
               required
             />
-            <p className="ms-2 text-sm font-medium text-heading select-none">
+            <p
+              className="ms-2 text-sm font-medium select-none"
+              style={{ color: "#3d4453ff" }}
+            >
               I agree with the{" "}
-              <a href="#" className="text-fg-brand hover:underline">
+              <a
+                href="#"
+                className="hover:underline"
+                style={{ color: "#13a4ecff" }}
+              >
                 terms and conditions
               </a>
               .
@@ -80,11 +108,21 @@ function Register() {
           <div className="flex gap-3">
             <button
               type="submit"
-              className="text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+              className="box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+              style={{
+                backgroundColor: "#13a4ecff",
+                color: "#f3f9ffff",
+              }}
             >
               Submit
             </button>
-            <button className="text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">
+            <button
+              className="box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+              style={{
+                backgroundColor: "#3d4453ff",
+                color: "#f3f9ffff",
+              }}
+            >
               Back
             </button>
           </div>

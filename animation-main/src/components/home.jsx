@@ -44,7 +44,7 @@ function Home() {
           logoAlt="Logo"
           items={items}
           baseColor="#3d4453"
-          menuColor="#3d4453"
+          menuColor="#ffffff"
           buttonBgColor="#309bed"
           buttonTextColor="#fafbfc"
           ease="power3.out"
@@ -57,6 +57,7 @@ function Home() {
             text="This text animates when in view"
             animateOn="view"
             revealDirection="center"
+            style={{ color: "#000000" }}
           />
         </div>
       </section>
