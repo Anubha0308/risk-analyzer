@@ -7,11 +7,11 @@ build/
 .env
 .DS_Store
 
-# --- BACKEND (Python/FastAPI) ---
 __pycache__/
 *.py[cod]
+backend/venv
 venv/
-.env
+**/.env
 *.db
 *.sqlite3
 

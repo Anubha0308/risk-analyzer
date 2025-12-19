@@ -1,7 +1,85 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TextPressure from "./TextPressure.jsx";
+import ErrorDisplay from "./ErrorDisplay.jsx";
 
 function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+
+  // Email validation
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Password validation (at least 6 characters)
+  const validatePassword = (password) => {
+    return password.length >= 6;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    // Validate email
+    if (!email) {
+      setError("Email is required");
+      return;
+    }
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    // Validate password
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+    if (!validatePassword(password)) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Important for cookies
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Registration successful, redirect to selladvice
+        navigate("/selladvice");
+      } else {
+        // Handle error from backend
+        if (response.status === 409) {
+          setError("User already exists, try logging in");
+        } else {
+          setError(data.detail || "Registration failed. Please try again.");
+        }
+      }
+    } catch (err) {
+      setError("Network error. Please check if the server is running.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div
       className="register-container w-full min-h-screen bg-neutral-primary overflow-x-hidden flex flex-col items-center justify-center"
@@ -9,14 +87,16 @@ function Register() {
         background: "#f6f2f3ff",
       }}
     >
+      {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
+      
       <div
         style={{
           position: "relative",
           height: "35vh", 
           width: "50%",
           display: "flex",
-          alignItems: "center", // vertical center within 35%
-          justifyContent: "center", // horizontal center
+          alignItems: "center",
+          justifyContent: "center",
           paddingTop: "50px",
         }}
       >
@@ -35,7 +115,10 @@ function Register() {
       </div>
 
       <div className="register-form w-full lg:w-3/4 h-auto mt-15 flex col items-center justify-center">
-        <form className="max-w-5xl w-full sm:w-3/4 md:w-1/2 mx-auto px-6 py-8 bg-transparent">
+        <form 
+          className="max-w-5xl w-full sm:w-3/4 md:w-1/2 mx-auto px-6 py-8 bg-transparent"
+          onSubmit={handleSubmit}
+        >
           <div className="mb-5">
             <label
               htmlFor="email"
@@ -47,6 +130,8 @@ function Register() {
             <input
               type="email"
               id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="bg-neutral-secondary-medium border border-default-medium text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
               style={{
                 backgroundColor: "#f7f9fbff",
@@ -68,6 +153,8 @@ function Register() {
             <input
               type="password"
               id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="bg-neutral-secondary-medium border border-default-medium text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs"
               style={{
                 backgroundColor: "#f7f9fbff",
@@ -108,15 +195,18 @@ function Register() {
           <div className="flex gap-3">
             <button
               type="submit"
-              className="box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
+              disabled={isSubmitting}
+              className="box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: "#13a4ecff",
                 color: "#f3f9ffff",
               }}
             >
-              Submit
+              {isSubmitting ? "Submitting..." : "Submit"}
             </button>
             <button
+              type="button"
+              onClick={() => navigate(-1)}
               className="box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none"
               style={{
                 backgroundColor: "#3d4453ff",
