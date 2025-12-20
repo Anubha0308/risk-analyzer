@@ -98,3 +98,6 @@ def me(user: str = Depends(get_current_user)):
 def logout(response: Response):
     response.delete_cookie("access_token")
     return {"message": "Logged out"}
+# ---------------- PREDICTION ----------------
+from routes.prediction import router as prediction_router
+app.include_router(prediction_router)
