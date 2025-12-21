@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException, Response, Depends, Cookie
+from fastapi import FastAPI, HTTPException, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
-from jose import jwt, JWTError
 import os
 
 from database import users_collection
-from auth_utils import hash_password, verify_password
+from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
 
 
@@ -22,23 +21,6 @@ app.add_middleware(
 class AuthRequest(BaseModel):
     email: EmailStr
     password: str
-
-# ---------------- AUTH HELPERS ----------------
-def get_current_user(access_token: str = Cookie(None)):
-    if not access_token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    try:
-        secret = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
-        algorithm = os.getenv("JWT_ALGORITHM", "HS256")
-        payload = jwt.decode(
-            access_token,
-            secret,
-            algorithms=[algorithm]
-        )
-        return payload["sub"]
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
 
 # ---------------- REGISTER ----------------
 @app.post("/register")
