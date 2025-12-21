@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+import traceback
 import yfinance as yf
 import joblib
 import os
@@ -19,7 +20,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
     """
 
     try:
-        df = yf.download(symbol, period="6mo", progress=False)
+        df = yf.download(symbol, period="6mo", auto_adjust=False, progress=False)
 
         if df.empty:
             raise HTTPException(status_code=404, detail="Invalid stock symbol")
@@ -45,4 +46,5 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
         }
 
     except Exception as e:
+        traceback.print_exc() 
         raise HTTPException(status_code=500, detail=str(e))
