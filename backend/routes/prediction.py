@@ -1,50 +1,98 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 import traceback
-import yfinance as yf
 import joblib
 import os
 
-from utils.feature_engineering import build_features
-from main import get_current_user  # reuse auth
+from utils.feature_engineering import get_features, FEATURES
+from auth_utils import get_current_user
 
-router = APIRouter(prefix="/predict", tags=["Prediction"])
+# ---------------- ROUTER ----------------
+router = APIRouter()
 
-# Load model ONCE
-MODEL_PATH = os.path.join("model", "stock_risk_model.pkl")
-model = joblib.load(MODEL_PATH)
+# ---------------- LOAD MODEL ----------------
+# Get the directory where this file is located, then navigate to model
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "stock_risk_model.pkl")
 
-@router.get("/risk/{symbol}")
+try:
+    if not os.path.exists(MODEL_PATH):
+        print(f"❌ Model file not found at: {MODEL_PATH}")
+        model = None
+    else:
+        model = joblib.load(MODEL_PATH)
+        print(f"✅ Model loaded successfully from: {MODEL_PATH}")
+except Exception as e:
+    print("❌ Failed to load ML model")
+    print(e)
+    model = None
+
+
+# ---------------- PREDICTION ENDPOINT ----------------
+@router.get("/predict/risk/{symbol}")
 def predict_risk(symbol: str, user: str = Depends(get_current_user)):
-    """
-    Predict downside risk for a given stock symbol
-    """
-
     try:
-        df = yf.download(symbol, period="6mo", auto_adjust=False, progress=False)
+        if model is None:
+            raise HTTPException(
+                status_code=500,
+                detail="ML model not loaded"
+            )
 
-        if df.empty:
-            raise HTTPException(status_code=404, detail="Invalid stock symbol")
+        # -------- Fetch features --------
+        features_df, error_msg = get_features(symbol)
 
-        features = build_features(df)
-        risk_prob = model.predict_proba([features])[0][1]
+        if features_df is None or features_df.empty:
+            detail = error_msg if error_msg else "Feature generation failed"
+            raise HTTPException(
+                status_code=500,
+                detail=detail
+            )
 
-        if risk_prob > 0.6:
-            level = "HIGH"
-            recommendation = "High downside risk — consider selling"
-        elif risk_prob > 0.4:
-            level = "MEDIUM"
-            recommendation = "Moderate risk — monitor closely"
-        else:
-            level = "LOW"
-            recommendation = "Low risk — hold"
+        # -------- Select required features --------
+        try:
+            X = features_df[FEATURES]
+        except KeyError:
+            raise HTTPException(
+                status_code=500,
+                detail="Feature mismatch between training and inference"
+            )
+
+        if X.isnull().any().any():
+            raise HTTPException(
+                status_code=500,
+                detail="Invalid (NaN) feature values"
+            )
+
+        # -------- Predict --------
+        risk_score = model.predict_proba(X)[0][1]
+
+        risk_level = (
+            "HIGH" if risk_score > 0.6
+            else "MEDIUM" if risk_score > 0.4
+            else "LOW"
+        )
+
+        recommendation = (
+            "High downside risk — consider selling"
+            if risk_score > 0.6
+            else "Moderate risk — monitor closely"
+            if risk_score > 0.4
+            else "Low risk — hold"
+        )
 
         return {
             "symbol": symbol.upper(),
-            "risk_score": round(float(risk_prob), 3),
-            "risk_level": level,
+            "risk_score": round(float(risk_score), 3),
+            "risk_level": risk_level,
             "recommendation": recommendation
         }
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        traceback.print_exc() 
-        raise HTTPException(status_code=500, detail=str(e))
+        print("❌ Prediction error:")
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail="Unexpected error during prediction"
+        )
