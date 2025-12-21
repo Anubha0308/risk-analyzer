@@ -93,7 +93,7 @@ def get_features(symbol: str):
         if df is None or df.empty:
             # Fallback: try download method
             try:
-                df = yf.download(symbol.upper(), period="6mo", progress=False, show_errors=False)
+                df = yf.download(symbol.upper(), period="6mo", progress=False)
                 # yf.download can return empty DataFrame if it fails silently
             except Exception as download_error:
                 error_msg = f"Failed to download data for symbol {symbol}: {str(download_error)}"
