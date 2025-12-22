@@ -37,8 +37,8 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
                 detail="ML model not loaded"
             )
 
-        # -------- Fetch features --------
-        features_df, error_msg = get_features(symbol)
+        # -------- Fetch features and chart series --------
+        features_df, chart_data, error_msg = get_features(symbol)
 
         if features_df is None or features_df.empty:
             detail = error_msg if error_msg else "Feature generation failed"
@@ -65,6 +65,30 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
         # -------- Predict --------
         risk_score = model.predict_proba(X)[0][1]
 
+        # -------- Build reasons --------
+        rsi = float(features_df.iloc[0].get("rsi", 0))
+        sma20 = float(features_df.iloc[0].get("sma_20", 0))
+        sma50 = float(features_df.iloc[0].get("sma_50", 0))
+        vol = float(features_df.iloc[0].get("volatility", 0))
+
+        reasons = []
+        if rsi >= 70:
+            reasons.append(f"RSI at {rsi:.1f} indicates overbought momentum")
+        elif rsi <= 30:
+            reasons.append(f"RSI at {rsi:.1f} indicates oversold momentum")
+        else:
+            reasons.append(f"RSI at {rsi:.1f} indicates stable momentum")
+
+        if sma20 > sma50:
+            reasons.append("Price is above short-term and medium-term averages")
+        else:
+            reasons.append("Price is below medium-term average, showing weaker trend")
+
+        if vol >= 0.04:
+            reasons.append("Elevated 10-day volatility")
+        else:
+            reasons.append("Volatility is relatively contained")
+
         risk_level = (
             "HIGH" if risk_score > 0.6
             else "MEDIUM" if risk_score > 0.4
@@ -83,7 +107,9 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
             "symbol": symbol.upper(),
             "risk_score": round(float(risk_score), 3),
             "risk_level": risk_level,
-            "recommendation": recommendation
+            "recommendation": recommendation,
+            "reasons": reasons,
+            "charts": chart_data or {},
         }
 
     except HTTPException:

@@ -74,13 +74,45 @@ def build_features(df: pd.DataFrame) -> pd.Series:
 
 
 # -------------------------------------------------
+# Helpers for charts
+# -------------------------------------------------
+def _prepare_chart_data(df: pd.DataFrame):
+    """
+    Build chart-ready series for the last ~90 trading days.
+    """
+    chart_df = df.copy()
+
+    # Indicators needed for the frontend graphs
+    chart_df["sma_20"] = ta.sma(chart_df["Close"], length=20)
+    chart_df["sma_50"] = ta.sma(chart_df["Close"], length=50)
+    chart_df["volatility"] = chart_df["Close"].pct_change().rolling(10).std()
+
+    # Remove rows that still have NaNs after indicator calculation
+    chart_df.dropna(subset=["Close", "sma_20", "sma_50", "volatility"], inplace=True)
+
+    # Keep the most recent 90 trading days
+    chart_df = chart_df.tail(90)
+
+    if chart_df.empty:
+        return None
+
+    return {
+        "dates": chart_df.index.strftime("%Y-%m-%d").tolist(),
+        "price": chart_df["Close"].round(2).tolist(),
+        "sma_20": chart_df["sma_20"].round(2).tolist(),
+        "sma_50": chart_df["sma_50"].round(2).tolist(),
+        "volatility": chart_df["volatility"].round(4).tolist(),
+    }
+
+
+# -------------------------------------------------
 # PUBLIC FUNCTION USED BY FASTAPI
 # -------------------------------------------------
 def get_features(symbol: str):
     """
     Fetches stock data using yfinance and returns
     a single-row DataFrame suitable for ML inference.
-    Returns (DataFrame or None, error_message or None)
+    Returns (DataFrame or None, chart_data or None, error_message or None)
     """
     error_msg = None
     
@@ -98,14 +130,14 @@ def get_features(symbol: str):
             except Exception as download_error:
                 error_msg = f"Failed to download data for symbol {symbol}: {str(download_error)}"
                 print(error_msg)
-                return None, error_msg
+                return None, None, error_msg
                 
         if df is None or df.empty:
             error_msg = f"Failed to download data for symbol {symbol}. Please check if the symbol is valid and try again."
             print(error_msg)
             print(f"Ticker object created: {ticker}")
             print(f"DataFrame shape: {df.shape if df is not None else 'None'}")
-            return None, error_msg
+            return None, None, error_msg
 
         # Handle MultiIndex columns (yfinance sometimes returns these)
         if isinstance(df.columns, pd.MultiIndex):
@@ -118,33 +150,35 @@ def get_features(symbol: str):
         if missing_cols:
             error_msg = f"Missing required columns: {missing_cols}. Available: {df.columns.tolist()}"
             print(error_msg)
-            return None, error_msg
+            return None, None, error_msg
 
         # Need at least 50 rows for SMA_50 to work
         if len(df) < 50:
             error_msg = f"Insufficient data: only {len(df)} rows available, need at least 50"
             print(error_msg)
-            return None, error_msg
+            return None, None, error_msg
+
+        chart_data = _prepare_chart_data(df.copy())
 
         feature_row = build_features(df.copy())
 
         if feature_row is None:
             error_msg = "build_features returned None - likely all rows dropped due to NaN values"
             print(error_msg)
-            return None, error_msg
+            return None, None, error_msg
 
         # Model expects 2D input (DataFrame, not Series)
-        return feature_row.to_frame().T, None
+        return feature_row.to_frame().T, chart_data, None
 
     except ValueError as ve:
         error_msg = f"ValueError in feature engineering: {str(ve)}"
         print(error_msg)
         import traceback
         traceback.print_exc()
-        return None, error_msg
+        return None, None, error_msg
     except Exception as e:
         error_msg = f"Unexpected error fetching features for {symbol}: {str(e)}"
         print(error_msg)
         import traceback
         traceback.print_exc()
-        return None, error_msg
+        return None, None, error_msg
