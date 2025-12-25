@@ -1,14 +1,25 @@
 from fastapi import FastAPI, HTTPException, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
+from starlette.middleware.sessions import SessionMiddleware
 import os
 
 from database import users_collection
 from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
 
+from fastapi import Request
+from fastapi.responses import RedirectResponse
+from auth.google_auth import oauth
+
 
 app = FastAPI()
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key="some-random-secret-key",
+    same_site="lax"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,7 +42,8 @@ def register(data: AuthRequest, response: Response):
 
     users_collection.insert_one({
         "email": data.email,
-        "hashed_password": hash_password(data.password)
+        "hashed_password": hash_password(data.password),
+        "auth_provider": "manual"
     })
 
     token = create_access_token(data.email)
@@ -53,6 +65,12 @@ def login(data: AuthRequest, response: Response):
     user = users_collection.find_one({"email": data.email})
     if not user:
         raise HTTPException(status_code=404, detail="User does not exist, try register")
+    
+    if user.get("hashed_password") is None:
+        raise HTTPException(
+            status_code=400,
+            detail="This account uses Google login"
+        )
 
     if not verify_password(data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid password")
@@ -70,9 +88,59 @@ def login(data: AuthRequest, response: Response):
 
     return {"message": "Login successful", "status": "success"}
 
+#-----------------GOOGLE AUTH-----------------
+
+@app.get("/auth/google/login")
+async def google_login(request: Request):
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.get("/auth/google/callback")
+async def google_callback(request: Request, response: Response):
+    token = await oauth.google.authorize_access_token(request)
+    user_info = token.get("userinfo")
+
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Google auth failed")
+
+    email = user_info["email"]
+
+    user = users_collection.find_one({"email": email})
+
+    # If user does not exist, create new user (signup logic)
+    if not user:
+        users_collection.insert_one({
+            "email": email,
+            "hashed_password": None,
+            "auth_provider": "google"
+        })
+        message = "Registered & logged in"
+    else:
+        message = "Login successful"
+
+    # Create JWT
+    jwt_token = create_access_token(email)
+
+    response.set_cookie(
+        key="access_token",
+        value=jwt_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=3600
+    )
+
+    # Redirect back to frontend after setting cookie
+    return RedirectResponse(url="http://localhost:5173/selladvice")
+
+@app.get("/auth/google/signup")
+async def google_signup(request: Request):
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
 # ---------------- PROTECTED ----------------
 @app.get("/me")
-def me(user: str = Depends(get_current_user)):
+def me(user: str = Depends(get_current_user)): 
     return {"email": user}
 
 # ---------------- LOGOUT ----------------
