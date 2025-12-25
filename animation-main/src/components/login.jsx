@@ -21,6 +21,11 @@ function Login() {
     return password.length >= 6;
   };
 
+  const handleGoogleLogin = () => {
+    // OAuth flow requires browser redirect, not fetch
+    window.location.href = "http://localhost:8000/auth/google/login";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -83,18 +88,25 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f7f8] flex flex-col items-center justify-center p-4" style={{ fontFamily: "Manrope, sans-serif" }}>
+    <div
+      className="min-h-screen bg-[#f6f7f8] flex flex-col items-center justify-center p-4"
+      style={{ fontFamily: "Manrope, sans-serif" }}
+    >
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
-      
+
       {/* Auth Card Container */}
       <div className="w-full max-w-[440px] bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
         {/* Header Section */}
         <div className="px-8 pt-10 pb-4 text-center">
           {/* Logo Placeholder */}
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#13a4ec]/10 text-[#13a4ec] mb-5 ring-1 ring-[#13a4ec]/20 shadow-sm">
-            <span className="material-symbols-outlined text-[32px]">candlestick_chart</span>
+            <span className="material-symbols-outlined text-[32px]">
+              candlestick_chart
+            </span>
           </div>
-          <h1 className="text-[#0d171b] tracking-tight text-[28px] font-bold leading-tight mb-2">Welcome Back</h1>
+          <h1 className="text-[#0d171b] tracking-tight text-[28px] font-bold leading-tight mb-2">
+            Welcome Back
+          </h1>
           <p className="text-[#4c809a] text-sm font-normal leading-normal max-w-[280px] mx-auto">
             Unlock AI-powered insights and manage your watchlists.
           </p>
@@ -107,13 +119,17 @@ function Login() {
               to="/login"
               className="flex flex-col items-center justify-center border-b-[3px] border-b-[#13a4ec] text-[#0d171b] pb-[13px] pt-2 flex-1 cursor-pointer transition-colors"
             >
-              <p className="text-sm font-bold leading-normal tracking-[0.015em]">Login</p>
+              <p className="text-sm font-bold leading-normal tracking-[0.015em]">
+                Login
+              </p>
             </Link>
             <Link
               to="/register"
               className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-[#4c809a] hover:text-slate-600 pb-[13px] pt-2 flex-1 cursor-pointer transition-colors"
             >
-              <p className="text-sm font-bold leading-normal tracking-[0.015em]">Sign Up</p>
+              <p className="text-sm font-bold leading-normal tracking-[0.015em]">
+                Sign Up
+              </p>
             </Link>
           </div>
         </div>
@@ -123,7 +139,9 @@ function Login() {
           <form onSubmit={handleSubmit}>
             {/* Email Field */}
             <label className="flex flex-col gap-2">
-              <p className="text-[#0d171b] text-sm font-medium leading-normal">Email Address</p>
+              <p className="text-[#0d171b] text-sm font-medium leading-normal">
+                Email Address
+              </p>
               <div className="relative">
                 <input
                   type="email"
@@ -141,7 +159,9 @@ function Login() {
             {/* Password Field */}
             <label className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <p className="text-[#0d171b] text-sm font-medium leading-normal">Password</p>
+                <p className="text-[#0d171b] text-sm font-medium leading-normal">
+                  Password
+                </p>
               </div>
               <div className="flex w-full flex-1 items-stretch rounded-xl relative">
                 <input
@@ -167,7 +187,12 @@ function Login() {
 
             {/* Forgot Password Link */}
             <div className="flex justify-end -mt-1">
-              <a href="#" className="text-[#13a4ec] hover:text-[#0f8ac4] text-sm font-semibold transition-colors">Forgot password?</a>
+              <a
+                href="#"
+                className="text-[#13a4ec] hover:text-[#0f8ac4] text-sm font-semibold transition-colors"
+              >
+                Forgot password?
+              </a>
             </div>
 
             {/* Primary Action */}
@@ -183,29 +208,27 @@ function Login() {
           {/* Divider */}
           <div className="relative flex py-2 items-center justify-center gap-3">
             <div className="h-px bg-slate-200 flex-1"></div>
-            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Or</span>
+            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
+              Or
+            </span>
             <div className="h-px bg-slate-200 flex-1"></div>
           </div>
 
           {/* Social Buttons */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid">
             <button
               type="button"
+              onClick={handleGoogleLogin}
               className="flex items-center justify-center gap-2 h-11 border border-[#cfdfe7] rounded-xl hover:bg-slate-50 transition-colors bg-white group"
             >
               <img
                 alt="Google"
-                className="w-5 h-5 opacity-90 group-hover:opacity-100 transition-opacity"
+                className="w-8 h-7 rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqIycVTZ6jJavSjIa2SgcdAisX1fqqsrbPdwTmLFrMl9Iq0KkxYwgmMQYJil78PyF1uE9ejo9Tsucb46jJcNCNG64p2qbjEafSlLdGvUsDZq3m6ZAx1UovYLZt7DEnZa2g1qUGYNnNOVzMeGUyYi-zKWn78yU6MZRAWSnofRGfmcWON-8EZwNDX0aTeST0-nnwiq4xKiWPjO9D6g2fPAdnYsDL4CDfNYrYNbZe3R917xvofM3GG1awc2TfdxvXN9o-I1H9nsRK1F4"
               />
-              <span className="text-[#0d171b] font-semibold text-sm">Google</span>
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-2 h-11 border border-[#cfdfe7] rounded-xl hover:bg-slate-50 transition-colors bg-white group"
-            >
-              <span className="material-symbols-outlined text-[#0d171b] text-[22px]">ios</span>
-              <span className="text-[#0d171b] font-semibold text-sm">Apple</span>
+              <span className="text-[#eaf0f2] font-semibold text-sm">
+                Google
+              </span>
             </button>
           </div>
         </div>
@@ -214,9 +237,20 @@ function Login() {
         <div className="bg-slate-50 p-6 text-center border-t border-slate-100">
           <p className="text-[#4c809a] text-xs leading-relaxed">
             By logging in, you agree to our{" "}
-            <a href="#" className="text-[#0d171b] font-bold hover:text-[#13a4ec] transition-colors">Terms of Service</a>{" "}
+            <a
+              href="#"
+              className="text-[#0d171b] font-bold hover:text-[#13a4ec] transition-colors"
+            >
+              Terms of Service
+            </a>{" "}
             and{" "}
-            <a href="#" className="text-[#0d171b] font-bold hover:text-[#13a4ec] transition-colors">Privacy Policy</a>.
+            <a
+              href="#"
+              className="text-[#0d171b] font-bold hover:text-[#13a4ec] transition-colors"
+            >
+              Privacy Policy
+            </a>
+            .
           </p>
         </div>
       </div>
