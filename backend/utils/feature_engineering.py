@@ -119,20 +119,32 @@ def get_features(symbol: str):
     try:
         # Use yf.Ticker for more reliable single symbol downloads
         ticker = yf.Ticker(symbol.upper())
-        df = ticker.history(period="6mo")
+        
+        # Try history() first
+        try:
+            df = ticker.history(period="6mo")
+        except Exception as history_error:
+            print(f"ticker.history() failed for {symbol}: {history_error}")
+            df = None
         
         # If history() fails or returns empty, try alternative method
-        if df is None or df.empty:
+        if df is None or (hasattr(df, 'empty') and df.empty):
+            print(f"First attempt failed, trying yf.download() for {symbol}")
             # Fallback: try download method
             try:
                 df = yf.download(symbol.upper(), period="6mo", progress=False)
                 # yf.download can return empty DataFrame if it fails silently
+                # Also handle MultiIndex columns from download
+                if df is not None and not df.empty and isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(0)
             except Exception as download_error:
                 error_msg = f"Failed to download data for symbol {symbol}: {str(download_error)}"
                 print(error_msg)
+                import traceback
+                traceback.print_exc()
                 return None, None, error_msg
                 
-        if df is None or df.empty:
+        if df is None or (hasattr(df, 'empty') and df.empty):
             error_msg = f"Failed to download data for symbol {symbol}. Please check if the symbol is valid and try again."
             print(error_msg)
             print(f"Ticker object created: {ticker}")

@@ -1,29 +1,27 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import ErrorDisplay from "../components/ErrorDisplay.jsx";
 import RiskGauge from "./riskgauge.jsx";
 import PriceGraph from "./pricegraph.jsx";
 import VolatilityChart from "./volatility.jsx";
 
 function SellAdvice() {
-  const [selectedStock, setSelectedStock] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [prediction, setPrediction] = useState(null);
+  const location = useLocation();
   const navigate = useNavigate();
+  const { symbol } = location.state || {};
 
-  const stocks = [
-    { value: "AAPL", label: "Apple Inc. (AAPL)" },
-    { value: "MSFT", label: "Microsoft (MSFT)" },
-    { value: "RELIANCE.NS", label: "Reliance Industries (RELIANCE)" },
-    { value: "GOOGL", label: "Alphabet (GOOGL)" },
-    { value: "AMZN", label: "Amazon (AMZN)" },
-    { value: "TSLA", label: "Tesla (TSLA)" },
-    { value: "META", label: "Meta (META)" },
-    { value: "NVDA", label: "NVIDIA (NVDA)" },
-  ];
+  useEffect(() => {
+    if (symbol) {
+      handlePredict(symbol);
+    } else {
+      setError("No stock symbol provided. Please go to the homepage to select a stock.");
+    }
+  }, [symbol]);
 
-  const handlePredict = async () => {
+  const handlePredict = async (selectedStock) => {
     if (!selectedStock) {
       setError("Please select a stock");
       return;
@@ -98,67 +96,14 @@ function SellAdvice() {
               Sell Advice
             </h1>
             <p style={{ color: "#6b7280", margin: 0 }}>
-              Choose a symbol to view ML-based risk and price trends.
+              ML-based risk and price trends for {symbol}.
             </p>
           </div>
         </div>
 
-        <div style={{ marginBottom: "20px" }}>
-          <label
-            htmlFor="stock-select"
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              color: "#3d4453ff",
-              fontSize: "14px",
-              fontWeight: "500",
-            }}
-          >
-            Select Stock
-          </label>
-          <select
-            id="stock-select"
-            value={selectedStock}
-            onChange={(e) => setSelectedStock(e.target.value)}
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "14px",
-              border: "1px solid #a8a4abff",
-              borderRadius: "6px",
-              backgroundColor: "#f7f9fbff",
-              color: "#3d4453ff",
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-          >
-            <option value="">Choose a stock...</option>
-            {stocks.map((stock) => (
-              <option key={stock.value} value={stock.value}>
-                {stock.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          onClick={handlePredict}
-          disabled={loading || !selectedStock}
-          style={{
-            width: "100%",
-            padding: "12px",
-            fontSize: "16px",
-            fontWeight: "500",
-            backgroundColor: loading || !selectedStock ? "#a8a4abff" : "#13a4ecff",
-            color: "#f3f9ffff",
-            border: "none",
-            borderRadius: "6px",
-            cursor: loading || !selectedStock ? "not-allowed" : "pointer",
-            marginBottom: "20px",
-          }}
-        >
-          {loading ? "Analyzing..." : "Get Prediction"}
-        </button>
+        {loading && (
+            <div style={{ textAlign: 'center', margin: '20px' }}>Analyzing...</div>
+        )}
 
         {prediction && (
           <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>

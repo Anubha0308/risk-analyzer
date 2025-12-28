@@ -68,8 +68,8 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Login successful, redirect to selladvice
-        navigate("/selladvice");
+        // Login successful, redirect to home
+        navigate("/");
       } else {
         // Handle error from backend
         if (response.status === 404) {
