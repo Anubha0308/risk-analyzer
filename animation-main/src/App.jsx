@@ -8,6 +8,7 @@ import Home from "./components/home.jsx";
 import SellAdvice from "./graphs/selladvice.jsx";
 import About from "./components/About.jsx";
 import MarketOverview from "./components/MarketOverview.jsx";
+import Profile from "./components/Profile.jsx";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/selladvice" element={<SellAdvice />} />
         <Route path="/about" element={<About />} />
         <Route path="/market-overview" element={<MarketOverview />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );
