@@ -6,6 +6,7 @@ import Login from "./components/login.jsx";
 import Whatall from "./components/whatall.jsx";
 import Home from "./components/home.jsx";
 import SellAdvice from "./graphs/selladvice.jsx";
+import About from "./components/About.jsx";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/selladvice" element={<SellAdvice />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </BrowserRouter>
   );

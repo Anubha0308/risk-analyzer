@@ -33,11 +33,8 @@ const Header = () => (
           <a href="#" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
             Market Overview
           </a>
-          <a href="#" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
-            Screener
-          </a>
-          <a href="#" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
-            Pricing
+          <a href="/about" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
+            About
           </a>
         </nav>
         <div className="flex items-center gap-3">
