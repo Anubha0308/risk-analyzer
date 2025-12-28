@@ -38,7 +38,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
             )
 
         # -------- Fetch features and chart series --------
-        features_df, chart_data, error_msg = get_features(symbol)
+        features_df, chart_data, current_price, error_msg = get_features(symbol)
 
         if features_df is None or features_df.empty:
             detail = error_msg if error_msg else "Feature generation failed"
@@ -110,6 +110,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
             "recommendation": recommendation,
             "reasons": reasons,
             "charts": chart_data or {},
+            "current_price": round(float(current_price), 2)
         }
 
     except HTTPException:

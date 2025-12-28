@@ -66,7 +66,8 @@ const StockRiskCard = ({ symbol, name }) => {
         setData({ 
           risk: riskData.risk_level, 
           risk_score: riskData.risk_score,
-          recommendation: riskData.recommendation 
+          recommendation: riskData.recommendation,
+          current_price: riskData.current_price
         });
       } catch (err) {
         console.error(`Error fetching data for ${symbol}:`, err);
@@ -119,6 +120,10 @@ const StockRiskCard = ({ symbol, name }) => {
             <div className="flex flex-col">
               <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">{symbol}</h3>
               <p className="text-xs text-[#4c809a] dark:text-slate-400 mt-0.5">{name}</p>
+            </div>
+            <div className="text-right">
+                <div className="text-xs text-[#4c809a] dark:text-slate-400">Price</div>
+                <div className="text-lg font-bold text-[#0d171b] dark:text-white">${data.current_price}</div>
             </div>
           </div>
           <div className="mb-4">

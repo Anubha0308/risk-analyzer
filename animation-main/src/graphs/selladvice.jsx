@@ -184,8 +184,9 @@ function SellAdvice() {
                         <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Symbol</div>
                         <div className="text-4xl font-bold text-[#0d171b] dark:text-white">{prediction.symbol}</div>
                       </div>
-                      <div className={`text-base font-bold px-4 py-2 rounded-full ${prediction.risk_level === 'HIGH' ? 'bg-red-500/15 text-red-500' : prediction.risk_level === 'MEDIUM' ? 'bg-amber-500/15 text-amber-500' : 'bg-green-500/15 text-green-500'}`}>
-                        {prediction.risk_level} RISK
+                      <div className="text-right">
+                        <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Current Price</div>
+                        <div className="text-4xl font-bold text-[#0d171b] dark:text-white">${prediction.current_price}</div>
                       </div>
                     </div>
 
@@ -205,6 +206,9 @@ function SellAdvice() {
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 flex flex-col items-center justify-center gap-4">
+                    <div className={`text-base font-bold px-4 py-2 rounded-full ${prediction.risk_level === 'HIGH' ? 'bg-red-500/15 text-red-500' : prediction.risk_level === 'MEDIUM' ? 'bg-amber-500/15 text-amber-500' : 'bg-green-500/15 text-green-500'}`}>
+                        {prediction.risk_level} RISK
+                      </div>
                     <RiskGauge value={(prediction.risk_score || 0) * 100} />
                     <div className="text-center">
                         <div className="text-sm text-[#4c809a] dark:text-slate-400">
