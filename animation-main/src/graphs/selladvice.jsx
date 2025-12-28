@@ -84,620 +84,156 @@ function SellAdvice() {
 
   if (checkingAuth) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f6f7f8",
-        }}
-      >
+      <div className="bg-[#f6f7f8] dark:bg-[#0d171b] min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#13a4ec]"></div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f6f7f8",
-        padding: "40px 20px",
-      }}
-    >
+    <div className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen p-5 sm:p-10 antialiased" style={{ fontFamily: "Manrope, sans-serif" }}>
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
 
-      <div
-        style={{
-          maxWidth: isAuthenticated ? "1400px" : "1200px",
-          width: "100%",
-          margin: "0 auto",
-          backgroundColor: "#ffffff",
-          padding: isAuthenticated ? "48px 56px" : "48px",
-          borderRadius: "16px",
-          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-        }}
-      >
-        <div style={{ marginBottom: "32px" }}>
-          <h1
-            style={{
-              color: "#0d171b",
-              fontSize: "36px",
-              fontWeight: "700",
-              marginBottom: "8px",
-              fontFamily: "Manrope, sans-serif",
-            }}
-          >
+      <div className={`max-w-7xl mx-auto w-full bg-white dark:bg-slate-900/80 p-6 sm:p-14 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none ring-1 ring-slate-200 dark:ring-slate-800`}>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-[#0d171b] dark:text-white mb-2">
             Sell Advice
           </h1>
-          <p style={{ color: "#4c809a", margin: 0, fontSize: "16px", fontFamily: "Manrope, sans-serif" }}>
+          <p className="text-[#4c809a] dark:text-slate-400 text-lg">
             {symbol ? `ML-based risk and price trends for ${symbol}` : "AI-powered stock risk analysis"}
           </p>
         </div>
 
         {!isAuthenticated ? (
           <div>
-            <div
-              style={{
-                padding: "32px",
-                borderRadius: "12px",
-                border: "2px dashed #cfdfe7",
-                backgroundColor: "#f9fafb",
-                textAlign: "center",
-                marginBottom: "40px",
-              }}
-            >
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "16px",
-                  backgroundColor: "#13a4ec",
-                  marginBottom: "20px",
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ color: "white", fontSize: "32px" }}>
-                  lock
-                </span>
-              </div>
-              <h2
-                style={{
-                  color: "#0d171b",
-                  fontSize: "24px",
-                  fontWeight: "700",
-                  marginBottom: "12px",
-                  fontFamily: "Manrope, sans-serif",
-                }}
-              >
-                Login Required
-              </h2>
-              <p
-                style={{
-                  color: "#4c809a",
-                  fontSize: "16px",
-                  marginBottom: "32px",
-                  maxWidth: "600px",
-                  margin: "0 auto 32px",
-                  fontFamily: "Manrope, sans-serif",
-                }}
-              >
-                Sign in to access comprehensive AI-powered stock risk analysis and get detailed insights for {symbol || "your stocks"}.
-              </p>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-                <Link
-                  to="/login"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "12px 24px",
-                    borderRadius: "12px",
-                    backgroundColor: "#13a4ec",
-                    color: "white",
-                    fontWeight: "700",
-                    fontSize: "16px",
-                    textDecoration: "none",
-                    fontFamily: "Manrope, sans-serif",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.target.style.backgroundColor = "#0f8ac4")}
-                  onMouseLeave={(e) => (e.target.style.backgroundColor = "#13a4ec")}
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "12px 24px",
-                    borderRadius: "12px",
-                    backgroundColor: "white",
-                    color: "#13a4ec",
-                    fontWeight: "700",
-                    fontSize: "16px",
-                    textDecoration: "none",
-                    border: "2px solid #13a4ec",
-                    fontFamily: "Manrope, sans-serif",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = "#f0f9ff";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = "white";
-                  }}
-                >
-                  Sign Up
-                </Link>
-              </div>
+             <div className="text-center p-8 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 mb-10">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#13a4ec] mb-5">
+                    <span className="material-symbols-outlined text-white text-4xl">lock</span>
+                </div>
+                <h2 className="text-2xl font-bold text-[#0d171b] dark:text-white mb-3">
+                    Login Required
+                </h2>
+                <p className="text-[#4c809a] dark:text-slate-400 max-w-xl mx-auto mb-8">
+                    Sign in to access comprehensive AI-powered stock risk analysis and get detailed insights for {symbol || "your stocks"}.
+                </p>
+                <div className="flex gap-3 justify-center">
+                    <Link to="/login" className="inline-flex items-center justify-center rounded-xl bg-[#13a4ec] hover:bg-[#0f8ac4] px-6 py-3 text-base font-bold text-white shadow-md shadow-[#13a4ec]/20 transition-all">
+                        Login
+                    </Link>
+                    <Link to="/register" className="inline-flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-6 py-3 text-base font-bold text-[#13a4ec] ring-2 ring-inset ring-[#13a4ec] transition-all">
+                        Sign Up
+                    </Link>
+                </div>
             </div>
 
-            <div style={{ marginTop: "48px" }}>
-              <h3
-                style={{
-                  color: "#0d171b",
-                  fontSize: "22px",
-                  fontWeight: "700",
-                  marginBottom: "24px",
-                  fontFamily: "Manrope, sans-serif",
-                }}
-              >
+            <div>
+              <h3 className="text-2xl font-bold text-[#0d171b] dark:text-white mb-6">
                 What you'll get with full access:
               </h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "24px",
-                    borderRadius: "12px",
-                    border: "1px solid #e5e7eb",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "10px",
-                        backgroundColor: "rgba(239,68,68,0.12)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ color: "#ef4444", fontSize: "24px" }}>
-                        warning
-                      </span>
-                    </div>
-                    <h4
-                      style={{
-                        color: "#0d171b",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        margin: 0,
-                        fontFamily: "Manrope, sans-serif",
-                      }}
-                    >
-                      Risk Probability
-                    </h4>
-                  </div>
-                  <p
-                    style={{
-                      color: "#4c809a",
-                      fontSize: "14px",
-                      lineHeight: "1.6",
-                      margin: 0,
-                      fontFamily: "Manrope, sans-serif",
-                    }}
-                  >
-                    Get precise risk scores (0-100%) calculated using advanced ML models that analyze market volatility, price trends, and historical patterns.
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    padding: "24px",
-                    borderRadius: "12px",
-                    border: "1px solid #e5e7eb",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "10px",
-                        backgroundColor: "rgba(34,197,94,0.12)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ color: "#16a34a", fontSize: "24px" }}>
-                        lightbulb
-                      </span>
-                    </div>
-                    <h4
-                      style={{
-                        color: "#0d171b",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        margin: 0,
-                        fontFamily: "Manrope, sans-serif",
-                      }}
-                    >
-                      Detailed Reasons
-                    </h4>
-                  </div>
-                  <p
-                    style={{
-                      color: "#4c809a",
-                      fontSize: "14px",
-                      lineHeight: "1.6",
-                      margin: 0,
-                      fontFamily: "Manrope, sans-serif",
-                    }}
-                  >
-                    Understand the "why" behind each risk assessment with AI-generated explanations covering market conditions, technical indicators, and trend analysis.
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    padding: "24px",
-                    borderRadius: "12px",
-                    border: "1px solid #e5e7eb",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "10px",
-                        backgroundColor: "rgba(19,164,236,0.12)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ color: "#13a4ec", fontSize: "24px" }}>
-                        show_chart
-                      </span>
-                    </div>
-                    <h4
-                      style={{
-                        color: "#0d171b",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        margin: 0,
-                        fontFamily: "Manrope, sans-serif",
-                      }}
-                    >
-                      Price & Volatility Charts
-                    </h4>
-                  </div>
-                  <p
-                    style={{
-                      color: "#4c809a",
-                      fontSize: "14px",
-                      lineHeight: "1.6",
-                      margin: 0,
-                      fontFamily: "Manrope, sans-serif",
-                    }}
-                  >
-                    Visualize 90-day price trends with SMA-20 and SMA-50 indicators, plus volatility analysis to spot potential risk patterns.
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    padding: "24px",
-                    borderRadius: "12px",
-                    border: "1px solid #e5e7eb",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "10px",
-                        backgroundColor: "rgba(245,158,11,0.12)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ color: "#d97706", fontSize: "24px" }}>
-                        trending_down
-                      </span>
-                    </div>
-                    <h4
-                      style={{
-                        color: "#0d171b",
-                        fontSize: "18px",
-                        fontWeight: "700",
-                        margin: 0,
-                        fontFamily: "Manrope, sans-serif",
-                      }}
-                    >
-                      Sell Recommendations
-                    </h4>
-                  </div>
-                  <p
-                    style={{
-                      color: "#4c809a",
-                      fontSize: "14px",
-                      lineHeight: "1.6",
-                      margin: 0,
-                      fontFamily: "Manrope, sans-serif",
-                    }}
-                  >
-                    Receive actionable sell/hold recommendations based on risk levels (HIGH, MEDIUM, LOW) to protect your portfolio from potential losses.
-                  </p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {[{
+                      title: "Risk Probability",
+                      description: "Get precise risk scores (0-100%) calculated using advanced ML models that analyze market volatility, price trends, and historical patterns.",
+                      icon: "warning",
+                      color: "red"
+                  }, {
+                      title: "Detailed Reasons",
+                      description: "Understand the \"why\" behind each risk assessment with AI-generated explanations covering market conditions, technical indicators, and trend analysis.",
+                      icon: "lightbulb",
+                      color: "green"
+                  }, {
+                      title: "Price & Volatility Charts",
+                      description: "Visualize 90-day price trends with SMA-20 and SMA-50 indicators, plus volatility analysis to spot potential risk patterns.",
+                      icon: "show_chart",
+                      color: "blue"
+                  }, {
+                      title: "Sell Recommendations",
+                      description: "Receive actionable sell/hold recommendations based on risk levels (HIGH, MEDIUM, LOW) to protect your portfolio from potential losses.",
+                      icon: "trending_down",
+                      color: "amber"
+                  }].map(item => (
+                      <div key={item.title} className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                          <div className="flex items-center gap-4 mb-4">
+                              <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-${item.color}-500/15 text-${item.color}-500`}>
+                                  <span className="material-symbols-outlined text-2xl">{item.icon}</span>
+                              </div>
+                              <h4 className="text-lg font-bold text-[#0d171b] dark:text-white">{item.title}</h4>
+                          </div>
+                          <p className="text-sm text-[#4c809a] dark:text-slate-400 leading-relaxed">{item.description}</p>
+                      </div>
+                  ))}
               </div>
             </div>
+
           </div>
         ) : (
           <>
             {loading && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "60px 20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "16px",
-                }}
-              >
+              <div className="text-center p-10 flex flex-col items-center gap-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#13a4ec]"></div>
-                <p style={{ color: "#4c809a", fontSize: "16px", fontFamily: "Manrope, sans-serif" }}>
-                  Analyzing {symbol}...
-                </p>
+                <p className="text-[#4c809a] dark:text-slate-400">Analyzing {symbol}...</p>
               </div>
             )}
 
             {prediction && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                <div
-                  style={{
-                    display: "grid",
-                    gap: "24px",
-                    gridTemplateColumns: "1.5fr 1fr",
-                    alignItems: "stretch",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "24px",
-                      borderRadius: "12px",
-                      border: "1px solid #e5e7eb",
-                      backgroundColor: "#f9fafb",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        marginBottom: "20px",
-                      }}
-                    >
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                    <div className="flex justify-between items-start mb-5">
                       <div>
-                        <div style={{ color: "#4c809a", fontSize: "14px", marginBottom: "4px", fontFamily: "Manrope, sans-serif" }}>
-                          Symbol
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "28px",
-                            fontWeight: 700,
-                            color: "#0d171b",
-                            fontFamily: "Manrope, sans-serif",
-                          }}
-                        >
-                          {prediction.symbol}
-                        </div>
+                        <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Symbol</div>
+                        <div className="text-4xl font-bold text-[#0d171b] dark:text-white">{prediction.symbol}</div>
                       </div>
-                      <div
-                        style={{
-                          padding: "8px 16px",
-                          borderRadius: "9999px",
-                          backgroundColor:
-                            prediction.risk_level === "HIGH"
-                              ? "rgba(239,68,68,0.12)"
-                              : prediction.risk_level === "MEDIUM"
-                              ? "rgba(245,158,11,0.12)"
-                              : "rgba(34,197,94,0.12)",
-                          color:
-                            prediction.risk_level === "HIGH"
-                              ? "#ef4444"
-                              : prediction.risk_level === "MEDIUM"
-                              ? "#d97706"
-                              : "#16a34a",
-                          fontWeight: 700,
-                          fontSize: "14px",
-                          fontFamily: "Manrope, sans-serif",
-                        }}
-                      >
+                      <div className={`text-base font-bold px-4 py-2 rounded-full ${prediction.risk_level === 'HIGH' ? 'bg-red-500/15 text-red-500' : prediction.risk_level === 'MEDIUM' ? 'bg-amber-500/15 text-amber-500' : 'bg-green-500/15 text-green-500'}`}>
                         {prediction.risk_level} RISK
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        marginTop: "20px",
-                        padding: "16px",
-                        borderRadius: "8px",
-                        backgroundColor: "#fff",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          color: "#0d171b",
-                          marginBottom: "12px",
-                          fontSize: "16px",
-                          fontFamily: "Manrope, sans-serif",
-                        }}
-                      >
-                        Recommendation
-                      </div>
-                      <div style={{ color: "#374151", fontSize: "15px", lineHeight: "1.6", fontFamily: "Manrope, sans-serif" }}>
-                        {prediction.recommendation}
-                      </div>
+                    <div className="bg-white dark:bg-slate-800 p-5 rounded-lg ring-1 ring-slate-200 dark:ring-slate-700 mb-6">
+                        <h4 className="font-bold text-[#0d171b] dark:text-white mb-2">Recommendation</h4>
+                        <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed">{prediction.recommendation}</p>
                     </div>
-
-                    <div style={{ marginTop: "20px" }}>
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          color: "#0d171b",
-                          marginBottom: "12px",
-                          fontSize: "18px",
-                          fontFamily: "Manrope, sans-serif",
-                        }}
-                      >
-                        Why this assessment
-                      </div>
-                      <ul
-                        style={{
-                          margin: 0,
-                          paddingLeft: "24px",
-                          color: "#374151",
-                          lineHeight: 1.8,
-                          fontSize: "15px",
-                          fontFamily: "Manrope, sans-serif",
-                        }}
-                      >
+                    
+                    <div>
+                      <h4 className="font-bold text-[#0d171b] dark:text-white mb-3">Why this assessment</h4>
+                      <ul className="list-disc pl-5 text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
                         {(prediction.reasons || []).map((reason, idx) => (
-                          <li key={idx} style={{ marginBottom: "8px" }}>
-                            {reason}
-                          </li>
+                          <li key={idx}>{reason}</li>
                         ))}
                       </ul>
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      padding: "24px",
-                      borderRadius: "12px",
-                      border: "1px solid #e5e7eb",
-                      backgroundColor: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700 flex flex-col items-center justify-center gap-4">
                     <RiskGauge value={(prediction.risk_score || 0) * 100} />
+                    <div className="text-center">
+                        <div className="text-sm text-[#4c809a] dark:text-slate-400">
+                            Risk Score
+                        </div>
+                        <div className="text-3xl font-bold text-[#0d171b] dark:text-white">
+                            {((prediction.risk_score || 0) * 100).toFixed(1)}%
+                        </div>
+                    </div>
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "24px",
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: "24px",
-                      borderRadius: "12px",
-                      border: "1px solid #e5e7eb",
-                      backgroundColor: "#fff",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        color: "#0d171b",
-                        marginBottom: "16px",
-                        fontSize: "18px",
-                        fontFamily: "Manrope, sans-serif",
-                      }}
-                    >
-                      Price with SMA-20 & SMA-50 (90 trading days)
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                        <h4 className="font-bold text-[#0d171b] dark:text-white mb-4">Price with SMA-20 & SMA-50 (90 trading days)</h4>
+                        <PriceGraph
+                            dates={prediction.charts?.dates || []}
+                            price={prediction.charts?.price || []}
+                            sma20={prediction.charts?.sma_20 || []}
+                            sma50={prediction.charts?.sma_50 || []}
+                        />
                     </div>
-                    <PriceGraph
-                      dates={prediction.charts?.dates || []}
-                      price={prediction.charts?.price || []}
-                      sma20={prediction.charts?.sma_20 || []}
-                      sma50={prediction.charts?.sma_50 || []}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      padding: "24px",
-                      borderRadius: "12px",
-                      border: "1px solid #e5e7eb",
-                      backgroundColor: "#fff",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        color: "#0d171b",
-                        marginBottom: "16px",
-                        fontSize: "18px",
-                        fontFamily: "Manrope, sans-serif",
-                      }}
-                    >
-                      Volatility (90 trading days)
+                     <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                        <h4 className="font-bold text-[#0d171b] dark:text-white mb-4">Volatility (90 trading days)</h4>
+                        <VolatilityChart
+                            dates={prediction.charts?.dates || []}
+                            volatility={prediction.charts?.volatility || []}
+                        />
                     </div>
-                    <VolatilityChart
-                      dates={prediction.charts?.dates || []}
-                      volatility={prediction.charts?.volatility || []}
-                    />
-                  </div>
                 </div>
               </div>
             )}
