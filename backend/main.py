@@ -153,3 +153,6 @@ def logout(response: Response):
 # ---------------- PREDICTION ----------------
 from routes.prediction import router as prediction_router
 app.include_router(prediction_router)
+# ---------------- MARKET ----------------
+from routes.market import router as market_router
+app.include_router(market_router)

@@ -7,6 +7,7 @@ import Whatall from "./components/whatall.jsx";
 import Home from "./components/home.jsx";
 import SellAdvice from "./graphs/selladvice.jsx";
 import About from "./components/About.jsx";
+import MarketOverview from "./components/MarketOverview.jsx";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/selladvice" element={<SellAdvice />} />
         <Route path="/about" element={<About />} />
+        <Route path="/market-overview" element={<MarketOverview />} />
       </Routes>
     </BrowserRouter>
   );

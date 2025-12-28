@@ -30,7 +30,7 @@ const Header = () => (
           </span>
         </div>
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
+          <a href="/market-overview" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
             Market Overview
           </a>
           <a href="/about" className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white" style={{ fontFamily: "Manrope, sans-serif" }}>

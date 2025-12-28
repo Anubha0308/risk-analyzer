@@ -39,10 +39,14 @@ function MarketOverview() {
 
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
-    const date = new Date(timestamp * 1000);
+  
+    const date = new Date(timestamp); // ISO string → Date object
+  
+    if (isNaN(date.getTime())) return '';
+  
     return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
