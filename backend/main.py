@@ -96,7 +96,7 @@ async def google_login(request: Request):
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get("/auth/google/callback")
-async def google_callback(request: Request, response: Response):
+async def google_callback(request: Request):
     token = await oauth.google.authorize_access_token(request)
     user_info = token.get("userinfo")
 
@@ -121,7 +121,10 @@ async def google_callback(request: Request, response: Response):
     # Create JWT
     jwt_token = create_access_token(email)
 
-    response.set_cookie(
+    # Create redirect response and set cookie on it(idhar par issue aa raha tha kyuki respponse ke saath cookie send nahi ho rahi thi 
+    #kyuki baad me new redirect response send ho raha tha actual jisme cookie thi wo wala response nahi)
+    redirect_response = RedirectResponse(url="http://localhost:5173/")
+    redirect_response.set_cookie(
         key="access_token",
         value=jwt_token,
         httponly=True,
@@ -130,8 +133,7 @@ async def google_callback(request: Request, response: Response):
         max_age=3600
     )
 
-    # Redirect back to frontend after setting cookie
-    return RedirectResponse(url="http://localhost:5173/selladvice")
+    return redirect_response
 
 @app.get("/auth/google/signup")
 async def google_signup(request: Request):
