@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
-from database import users_collection
+from database import users_collection,user_info_collection  
 from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
 
@@ -45,7 +45,12 @@ def register(data: AuthRequest, response: Response):
         "hashed_password": hash_password(data.password),
         "auth_provider": "manual"
     })
-
+    user_info_collection.insert_one({
+        "email":data.email,
+        "watchlist":[],
+        "recently_viewed":[],#upto 6 stocks
+        "full_name":""
+    })
     token = create_access_token(data.email)
 
     response.set_cookie(
@@ -109,11 +114,19 @@ async def google_callback(request: Request):
 
     # If user does not exist, create new user (signup logic)
     if not user:
+        
         users_collection.insert_one({
             "email": email,
             "hashed_password": None,
             "auth_provider": "google"
         })
+        user_info_collection.insert_one({
+        "email":email,
+        "watchlist":[],
+        "recently_viewed":[],#upto 6 stocks
+        "full_name":""
+        })
+        
         message = "Registered & logged in"
     else:
         message = "Login successful"
@@ -148,7 +161,12 @@ def me(user: str = Depends(get_current_user)):
 # ---------------- LOGOUT ----------------
 @app.post("/logout")
 def logout(response: Response):
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        samesite="lax",
+        secure=False
+    )
     return {"message": "Logged out"}
 # ---------------- PREDICTION ----------------
 from routes.prediction import router as prediction_router
@@ -156,3 +174,6 @@ app.include_router(prediction_router)
 # ---------------- MARKET ----------------
 from routes.market import router as market_router
 app.include_router(market_router)
+# ---------------- PROFILE ----------------
+from routes.profile import router as profile_router
+app.include_router(profile_router)
