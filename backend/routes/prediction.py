@@ -5,6 +5,7 @@ import os
 
 from utils.feature_engineering import get_features, FEATURES
 from auth_utils import get_current_user
+from database import user_info_collection
 
 # ---------------- ROUTER ----------------
 router = APIRouter()
@@ -64,6 +65,31 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
 
         # -------- Predict --------
         risk_score = model.predict_proba(X)[0][1]
+
+        #---------Update user's recently viewed stocks--------
+        # 1. Remove if already present
+        user_info_collection.update_one(
+            {"email": user},
+            {"$pull": {"recently_viewed": symbol}}
+        )
+
+        # 2. Push to front & limit to 6
+        user_info_collection.update_one(
+            {"email": user},
+            {
+                "$push": {
+                    "recently_viewed": {
+                        "$each": [symbol],
+                        "$position": 0,
+                        "$slice": 6
+                    }
+                }
+            }
+        )
+
+
+
+
 
         # -------- Build reasons --------
         rsi = float(features_df.iloc[0].get("rsi", 0))
