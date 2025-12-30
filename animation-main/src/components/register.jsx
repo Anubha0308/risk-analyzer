@@ -69,7 +69,7 @@ function Register() {
 
       if (response.ok) {
         // Registration successful, redirect to selladvice
-        navigate("/selladvice");
+        navigate("/");
       } else {
         // Handle error from backend
         if (response.status === 409) {
