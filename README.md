@@ -40,8 +40,10 @@ RiskAI is a web application that leverages advanced machine learning algorithms 
 2.  **Backend Setup:**
     ```bash
     cd backend
+    <enter the virtual environment>
     pip install -r requirements.txt
-    python main.py
+    uvicorn main:app --reload
+    (test your backend using FastAPI/SwaggerUI on the port you have entered for running the backend)
     ```
 
 3.  **Frontend Setup:**

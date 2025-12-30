@@ -39,22 +39,49 @@ const Header = () => (
   </header>
 );
 
-const WatchlistCard = ({ symbol, onRemove, isEditing }) => (
-  <div className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 transition-all duration-300">
-    <div className="flex flex-col">
-      <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">{symbol}</h3>
+const WatchlistCard = ({ symbol, onRemove, isEditing }) => {
+  const cardContent = (
+    <div className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-4 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 transition-all duration-300 hover:shadow-lg hover:ring-[#13a4ec]/50">
+      <div className="flex flex-col">
+        <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">
+          {symbol}
+        </h3>
+      </div>
+
+      {isEditing ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(symbol);
+          }}
+          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      ) : (
+        <span className="text-sm font-semibold text-[#13a4ec] opacity-0 group-hover:opacity-100 transition-opacity">
+          Analyze
+        </span>
+      )}
     </div>
-    {isEditing && (
-      <button
-        type="button"
-        onClick={() => onRemove(symbol)}
-        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-      >
-        <span className="material-symbols-outlined">close</span>
-      </button>
-    )}
-  </div>
-);
+  );
+
+  // ⛔ While editing → NOT clickable
+  if (isEditing) return cardContent;
+
+  // ✅ Normal mode → clickable
+  return (
+    <Link
+      to="/selladvice"
+      state={{ symbol }}
+      className="block"
+    >
+      {cardContent}
+    </Link>
+  );
+};
+
 
 function Profile() {
   const navigate = useNavigate();
@@ -301,9 +328,9 @@ function Profile() {
             </div>
           </div>
 
-          {/* Watchlist Section */}
+          {/* Bookmarked Stocks Section */}
           <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-8 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 mb-10">
-            <h2 className="text-2xl font-bold mb-6">Watchlist</h2>
+            <h2 className="text-2xl font-bold mb-6">Bookmarked Stocks</h2>
             {isEditing && (
               <div className="mb-6 flex gap-2">
                 <input
