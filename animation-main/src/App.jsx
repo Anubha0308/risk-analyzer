@@ -8,6 +8,7 @@ import SellAdvice from "./graphs/selladvice.jsx";
 import About from "./components/About.jsx";
 import MarketOverview from "./components/MarketOverview.jsx";
 import Profile from "./components/Profile.jsx";
+import AuthError from "./components/auth_error.jsx";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/market-overview" element={<MarketOverview />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/auth-error" element={<AuthError />} />
       </Routes>
     </BrowserRouter>
   );

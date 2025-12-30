@@ -98,7 +98,7 @@ def login(data: AuthRequest, response: Response):
 @app.get("/auth/google/login")
 async def google_login(request: Request):
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    return await oauth.google.authorize_redirect(request, redirect_uri, state="login")
 
 @app.get("/auth/google/callback")
 async def google_callback(request: Request):
@@ -106,30 +106,32 @@ async def google_callback(request: Request):
     user_info = token.get("userinfo")
 
     if not user_info:
-        raise HTTPException(status_code=400, detail="Google auth failed")
+        return RedirectResponse("http://localhost:5173/auth-error?type=google")
 
     email = user_info["email"]
-
+    intent = request.query_params.get("state")
     user = users_collection.find_one({"email": email})
 
-    # If user does not exist, create new user (signup logic)
-    if not user:
-        
+    if intent == "login" and not user:
+        return RedirectResponse("http://localhost:5173/auth-error?type=not_registered")
+
+    if intent == "signup" and user:
+        return RedirectResponse("http://localhost:5173/auth-error?type=already_exists")
+
+    # success
+    if intent == "signup":
         users_collection.insert_one({
             "email": email,
             "hashed_password": None,
             "auth_provider": "google"
         })
         user_info_collection.insert_one({
-        "email":email,
-        "watchlist":[],
-        "recently_viewed":[],#upto 6 stocks
-        "full_name":""
+            "email": email,
+            "watchlist": [],
+            "recently_viewed": [],
+            "full_name": ""
         })
         
-        message = "Registered & logged in"
-    else:
-        message = "Login successful"
 
     # Create JWT
     jwt_token = create_access_token(email)
@@ -145,13 +147,13 @@ async def google_callback(request: Request):
         secure=False,
         max_age=3600
     )
-
+    
     return redirect_response
 
 @app.get("/auth/google/signup")
 async def google_signup(request: Request):
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    return await oauth.google.authorize_redirect(request, redirect_uri, state="signup")
 
 # ---------------- PROTECTED ----------------
 @app.get("/me")
