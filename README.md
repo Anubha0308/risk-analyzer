@@ -19,7 +19,7 @@ RiskAI is a web application that leverages advanced machine learning algorithms 
 ### Backend
 
 *   Python
-*   Flask
+*   FastAPI
 *   scikit-learn
 
 ## Getting Started
