@@ -170,8 +170,22 @@ def get_features(symbol: str):
             print(error_msg)
             return None, None, None, error_msg
 
+        # Get previous close if available
         # Get current price
-        current_price = df['Close'].iloc[-1]
+        
+        fast = ticker.fast_info
+
+        current_price = fast["last_price"]
+        prev_close = fast["previous_close"]
+        if prev_close is None and len(df)>=2:
+            prev_close = df["close"].iloc[-2] #fallback to second last close from df
+        if current_price is None and len(df)>=1:
+            current_price = df["close"].iloc[-1] #fallback to last close from df 
+        
+        if prev_close is not None and prev_close !=0 and current_price is not None:
+            price_change_pct = round((current_price - prev_close) / prev_close * 100,2) 
+        else:
+            price_change_pct = None
 
         chart_data = _prepare_chart_data(df.copy())
 
@@ -183,7 +197,7 @@ def get_features(symbol: str):
             return None, None, None, error_msg
 
         # Model expects 2D input (DataFrame, not Series)
-        return feature_row.to_frame().T, chart_data, current_price, None
+        return feature_row.to_frame().T, chart_data, price_change_pct, current_price, None
 
     except ValueError as ve:
         error_msg = f"ValueError in feature engineering: {str(ve)}"

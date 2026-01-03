@@ -184,9 +184,11 @@ function SellAdvice() {
                         <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Symbol</div>
                         <div className="text-4xl font-bold text-[#0d171b] dark:text-white">{prediction.symbol}</div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right flex flex-row gap-10">
                         <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Current Price</div>
                         <div className="text-4xl font-bold text-[#0d171b] dark:text-white">${prediction.current_price}</div>
+                        <div className="text-xs text-[#4c809a] dark:text-slate-400 mb-1">Price Change</div>
+                        <div className="text-2xl font-bold text-[#0d171b] dark:text-white">${prediction.price_change}</div>
                       </div>
                     </div>
 
@@ -210,13 +212,20 @@ function SellAdvice() {
                         {prediction.risk_level} RISK
                       </div>
                     <RiskGauge value={(prediction.risk_score || 0) * 100} />
-                    <div className="text-center">
+                    <div className="text-center flex flex-row gap-2">
                         <div className="text-sm text-[#4c809a] dark:text-slate-400">
                             Risk Score
                         </div>
                         <div className="text-3xl font-bold text-[#0d171b] dark:text-white">
                             {((prediction.risk_score || 0) * 100).toFixed(1)}%
                         </div>
+                        <div className="text-xs text-[#4c809a] dark:text-slate-400">
+                            Risk Change since last analysis
+                        </div>
+                        <div className="text-xl font-bold text-[#0d171b] dark:text-white">
+                            {prediction.risk_change !== null ? `${((prediction.risk_change || 0) * 100).toFixed(1)}%` :"N/A"}
+                        </div>
+
                     </div>
                   </div>
                 </div>

@@ -1,1 +1,6 @@
-anubha is writing this to check if the branch is getting created on origin or not
+sabse pehle to jo home page par hai jo user login hone ke baad prediction hota hai 
+will also have to take care that for the very first analysis there would be no any info in the database so for that a check condition will have to be put
+to sabse pehle to wo hi database me store ho jayenge 
+phir uske baad jab user khud analyzsis karta hai wo then 
+two things are there percentage change in the current price and previous date close(this will not require the database)
+and also the risk change indicator which will use the database 
