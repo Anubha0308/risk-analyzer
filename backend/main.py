@@ -7,6 +7,8 @@ import os
 from database import users_collection,user_info_collection, user_stocks_info_collection 
 from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
+from core.rate_limiter import setup_rate_limiter, limiter
+from core.cooldown_logic import check_locked, record_failure, reset_attempts
 
 from fastapi import Request
 from fastapi.responses import RedirectResponse
@@ -29,13 +31,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+setup_rate_limiter(app)
+
 class AuthRequest(BaseModel):
     email: EmailStr
     password: str
 
 # ---------------- REGISTER ----------------
+
 @app.post("/register")
-def register(data: AuthRequest, response: Response):
+@limiter.limit("5/minute")
+def register(request: Request, data: AuthRequest, response: Response):
     # Check if user already exists before inserting
     if users_collection.find_one({"email": data.email}):
         raise HTTPException(status_code=409, detail="User already exists, try logging in")
@@ -69,8 +75,20 @@ def register(data: AuthRequest, response: Response):
     return {"message": "Registered & logged in", "status": "success"}
 
 # ---------------- LOGIN ----------------
+
+
 @app.post("/login")
-def login(data: AuthRequest, response: Response):
+@limiter.limit("10/minute")
+def login(request: Request, data: AuthRequest, response: Response):
+    
+    locked, remaining = check_locked(data.email)
+
+    if locked:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Account locked. Try again in {remaining} seconds."
+        )
+
     user = users_collection.find_one({"email": data.email})
     if not user:
         raise HTTPException(status_code=404, detail="User does not exist, try register")
@@ -80,9 +98,12 @@ def login(data: AuthRequest, response: Response):
             status_code=400,
             detail="This account uses Google login"
         )
-
+    
     if not verify_password(data.password, user["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Invalid password")
+        record_failure(data.email)
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    reset_attempts(data.email)
 
     token = create_access_token(data.email)
 
