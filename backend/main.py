@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
-from database import users_collection,user_info_collection, user_stocks_info_collection 
+from database import users_collection,user_info_collection, user_stocks_info_collection
 from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
 from core.rate_limiter import setup_rate_limiter, limiter
@@ -14,6 +14,8 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from auth.google_auth import oauth
 
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 app = FastAPI()
 
@@ -25,7 +27,7 @@ app.add_middleware(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -122,7 +124,7 @@ def login(request: Request, data: AuthRequest, response: Response):
 
 @app.get("/auth/google/login")
 async def google_login(request: Request):
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI") or f"{backend_url}/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri, state="login")
 
 @app.get("/auth/google/callback")
@@ -131,17 +133,17 @@ async def google_callback(request: Request):
     user_info = token.get("userinfo")
 
     if not user_info:
-        return RedirectResponse("http://localhost:5173/auth-error?type=google")
+        return RedirectResponse(f"{frontend_url}/auth-error?type=google")
 
     email = user_info["email"]
     intent = request.query_params.get("state")
     user = users_collection.find_one({"email": email})
 
     if intent == "login" and not user:
-        return RedirectResponse("http://localhost:5173/auth-error?type=not_registered")
+        return RedirectResponse(f"{frontend_url}/auth-error?type=not_registered")
 
     if intent == "signup" and user:
-        return RedirectResponse("http://localhost:5173/auth-error?type=already_exists")
+        return RedirectResponse(f"{frontend_url}/auth-error?type=already_exists")
 
     # success
     if intent == "signup":
@@ -167,7 +169,7 @@ async def google_callback(request: Request):
 
     # Create redirect response and set cookie on it(idhar par issue aa raha tha kyuki respponse ke saath cookie send nahi ho rahi thi 
     #kyuki baad me new redirect response send ho raha tha actual jisme cookie thi wo wala response nahi)
-    redirect_response = RedirectResponse(url="http://localhost:5173/")
+    redirect_response = RedirectResponse(url=f"{frontend_url}/")
     redirect_response.set_cookie(
         key="access_token",
         value=jwt_token,
@@ -181,7 +183,7 @@ async def google_callback(request: Request):
 
 @app.get("/auth/google/signup")
 async def google_signup(request: Request):
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI") or f"{backend_url}/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri, state="signup")
 
 # ---------------- PROTECTED ----------------

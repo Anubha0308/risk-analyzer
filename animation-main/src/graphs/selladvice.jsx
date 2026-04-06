@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
+import { backend_url } from "../config.js";
 import ErrorDisplay from "../components/ErrorDisplay.jsx";
 import RiskGauge from "./riskgauge.jsx";
 import PriceGraph from "./pricegraph.jsx";
@@ -27,7 +28,7 @@ function SellAdvice() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/predict/risk/${selectedStock}`,
+        `${backend_url}/predict/risk/${selectedStock}`,
         {
           method: "GET",
           credentials: "include", // Important for cookies
@@ -57,7 +58,7 @@ function SellAdvice() {
     // Check authentication status
     const checkAuth = async () => {
       try {
-        const response = await fetch("http://localhost:8000/me", {
+        const response = await fetch(`${backend_url}/me`, {
           method: "GET",
           credentials: "include",
         });

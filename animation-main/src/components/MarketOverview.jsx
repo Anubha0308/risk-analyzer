@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { backend_url } from '../config.js';
 import Header from './Header.jsx';
 import ErrorDisplay from './ErrorDisplay.jsx';
 
@@ -12,7 +13,7 @@ function MarketOverview() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('http://localhost:8000/market/news', {
+        const response = await fetch(`${backend_url}/market/news`, {
           method: 'GET',
           credentials: 'include',
           headers: {

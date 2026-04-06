@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { backend_url } from "../config.js";
 
 const Header = () => (
   <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d171b]/95 backdrop-blur-md">
@@ -102,7 +103,7 @@ function Profile() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch("http://localhost:8000/profile", {
+      const response = await fetch(`${backend_url}/profile`, {
         method: "GET",
         credentials: "include",
       });
@@ -157,7 +158,7 @@ function Profile() {
     try{
       setSaving(true);
       setError("");
-      const response = await fetch("http://localhost:8000/profile", {
+      const response = await fetch(`${backend_url}/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -187,7 +188,7 @@ function Profile() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8000/logout", {
+      await fetch(`${backend_url}/logout`, {
         method: "POST",
         credentials: "include",
       });

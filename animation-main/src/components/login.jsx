@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
 
 function Login() {
@@ -23,7 +24,7 @@ function Login() {
 
   const handleGoogleLogin = () => {
     // OAuth flow requires browser redirect, not fetch
-    window.location.href = "http://localhost:8000/auth/google/login";
+    window.location.href = `${backend_url}/auth/google/login`;
   };
 
   const handleSubmit = async (e) => {
@@ -53,7 +54,7 @@ function Login() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8000/login", {
+      const response = await fetch(`${backend_url}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
 
 // Helper function to fetch risk data
 const fetchRiskData = async (symbol) => {
-  const response = await fetch(`http://localhost:8000/predict/risk/${symbol}`, {
+  const response = await fetch(`${backend_url}/predict/risk/${symbol}`, {
     method: "GET",
     credentials: "include", // Important for cookies/auth
     headers: {
@@ -195,7 +196,7 @@ function Home() {
 
   const handleprofileClick = async () => {
     try {
-      const response = await fetch("http://localhost:8000/profile", {
+      const response = await fetch(`${backend_url}/profile`, {
         method: "GET",
         credentials: "include", // Important for cookies
       });
