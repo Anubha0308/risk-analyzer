@@ -16,18 +16,35 @@ from auth.google_auth import oauth
 
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+env = os.getenv("ENV", "development").lower()
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
+cookie_secure = _env_bool("COOKIE_SECURE", env == "production")
+cookie_samesite = os.getenv("COOKIE_SAMESITE", "none" if cookie_secure else "lax").lower()
+
+# Allow comma-separated origins via env for prod + local development.
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", frontend_url).split(",")
+    if origin.strip()
+]
 
 app = FastAPI()
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key="some-random-secret-key",
-    same_site="lax"
+    secret_key=os.getenv("SECRET_KEY", "some-random-secret-key"),
+    same_site="lax",
+    https_only=cookie_secure,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,8 +86,8 @@ def register(request: Request, data: AuthRequest, response: Response):
         key="access_token",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=False,
+        samesite=cookie_samesite,
+        secure=cookie_secure,
         max_age=3600
     )
 
@@ -113,8 +130,8 @@ def login(request: Request, data: AuthRequest, response: Response):
         key="access_token",
         value=token,
         httponly=True,
-        samesite="lax",
-        secure=False,
+        samesite=cookie_samesite,
+        secure=cookie_secure,
         max_age=3600
     )
 
@@ -174,8 +191,8 @@ async def google_callback(request: Request):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        samesite="lax",
-        secure=False,
+        samesite=cookie_samesite,
+        secure=cookie_secure,
         max_age=3600
     )
     
@@ -197,8 +214,8 @@ def logout(response: Response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        samesite="lax",
-        secure=False
+        samesite=cookie_samesite,
+        secure=cookie_secure
     )
     return {"message": "Logged out"}
 # ---------------- PREDICTION ----------------
