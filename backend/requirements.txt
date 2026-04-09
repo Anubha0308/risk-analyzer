@@ -32,3 +32,4 @@ authlib
 httpx
 slowapi
 itsDangerous
+requests

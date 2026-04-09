@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 import yfinance as yf
+import httpx
 
 router = APIRouter(prefix="/market", tags=["market"])
 
@@ -18,6 +19,53 @@ SECTOR_FALLBACKS = {
     "Real Estate": ["AMT", "PLD", "CCI", "EQIX", "SPG"],
     "Basic Materials": ["LIN", "APD", "ECL", "NEM", "FCX"],
 }
+
+@router.get("/search")
+async def search_stocks(q: str = Query(..., min_length=1), limit: int = 6):
+    """
+    Proxy Yahoo Finance search through backend to avoid browser CORS issues.
+    """
+    try:
+        url = "https://query2.finance.yahoo.com/v1/finance/search"
+        params = {
+            "q": q,
+            "quotesCount": min(max(int(limit), 1), 10),
+            "newsCount": 0,
+            "enableFuzzyQuery": "false",
+        }
+        headers = {
+            # Yahoo sometimes blocks requests without a UA
+            "User-Agent": "Mozilla/5.0 (compatible; RiskAI/1.0)",
+            "Accept": "application/json",
+        }
+
+        async with httpx.AsyncClient(timeout=10.0, headers=headers) as client:
+            resp = await client.get(url, params=params)
+            resp.raise_for_status()
+            data = resp.json()
+
+        quotes = data.get("quotes") or []
+        out = []
+        for item in quotes:
+            symbol = item.get("symbol")
+            qtype = item.get("quoteType")
+            if not symbol or qtype not in ("EQUITY", "ETF"):
+                continue
+            out.append(
+                {
+                    "symbol": symbol,
+                    "name": item.get("shortname") or item.get("longname") or item.get("name") or symbol,
+                    "exchange": item.get("exchDisp") or item.get("exchange") or "",
+                }
+            )
+            if len(out) >= min(max(int(limit), 1), 10):
+                break
+
+        return {"quotes": out}
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Search provider error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/similar/{symbol}")

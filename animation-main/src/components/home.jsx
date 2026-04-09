@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
 
-const YAHOO_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search";
-
 // Helper function to fetch risk data
 const fetchRiskData = async (symbol) => {
   const response = await fetch(`${backend_url}/predict/risk/${encodeURIComponent(symbol)}`, {
@@ -24,19 +22,13 @@ const fetchRiskData = async (symbol) => {
 };
 
 const searchTickers = async (query) => {
-  const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(query)}&quotesCount=6&newsCount=0&enableFuzzyQuery=false`;
-  const res = await fetch(url);
+  const res = await fetch(
+    `${backend_url}/market/search?q=${encodeURIComponent(query)}&limit=6`,
+    { headers: { Accept: "application/json" } }
+  );
   if (!res.ok) throw new Error("Failed to search tickers");
   const data = await res.json();
-  const quotes = Array.isArray(data?.quotes) ? data.quotes : [];
-  return quotes
-    .filter((q) => q?.symbol && (q.quoteType === "EQUITY" || q.quoteType === "ETF"))
-    .slice(0, 6)
-    .map((q) => ({
-      symbol: q.symbol,
-      name: q.shortname || q.longname || q.name || q.symbol,
-      exchange: q.exchDisp || q.exchange || "",
-    }));
+  return Array.isArray(data?.quotes) ? data.quotes : [];
 };
 
 const Header = ({ onProfileClick }) => (
