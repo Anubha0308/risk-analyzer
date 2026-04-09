@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
 
+const YAHOO_SEARCH_URL = "https://query2.finance.yahoo.com/v1/finance/search";
+
 // Helper function to fetch risk data
 const fetchRiskData = async (symbol) => {
-  const response = await fetch(`${backend_url}/predict/risk/${symbol}`, {
+  const response = await fetch(`${backend_url}/predict/risk/${encodeURIComponent(symbol)}`, {
     method: "GET",
     credentials: "include", // Important for cookies/auth
     headers: {
@@ -19,6 +21,22 @@ const fetchRiskData = async (symbol) => {
     throw new Error(errorData.detail || "Failed to fetch risk data");
   }
   return response.json();
+};
+
+const searchTickers = async (query) => {
+  const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(query)}&quotesCount=6&newsCount=0&enableFuzzyQuery=false`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to search tickers");
+  const data = await res.json();
+  const quotes = Array.isArray(data?.quotes) ? data.quotes : [];
+  return quotes
+    .filter((q) => q?.symbol && (q.quoteType === "EQUITY" || q.quoteType === "ETF"))
+    .slice(0, 6)
+    .map((q) => ({
+      symbol: q.symbol,
+      name: q.shortname || q.longname || q.name || q.symbol,
+      exchange: q.exchDisp || q.exchange || "",
+    }));
 };
 
 const Header = ({ onProfileClick }) => (
@@ -186,13 +204,83 @@ const StockRiskCard = ({ symbol, name }) => {
 function Home() {
   const navigate = useNavigate();
   const [symbol, setSymbol] = useState("");
+  const [selectedSymbol, setSelectedSymbol] = useState("");
+  const [selectedName, setSelectedName] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestLoading, setSuggestLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleAnalyze = () => {
-    if (symbol) {
-      navigate("/selladvice", { state: { symbol } });
+  const handleAnalyze = async () => {
+    const rawInput = (symbol || "").trim();
+    let sym = (selectedSymbol || "").trim().toUpperCase();
+    let displayName = selectedName || "";
+
+    if (!sym) {
+      const m = rawInput.match(/\(([A-Za-z0-9.\-^]+)\)\s*$/);
+      if (m) sym = m[1].toUpperCase();
     }
+
+    // resolve by name or ticker via Yahoo Finance search
+    if (!sym && rawInput.length >= 2) {
+      try {
+        const results = await searchTickers(rawInput);
+        if (results.length > 0) {
+          sym = results[0].symbol.toUpperCase();
+          displayName = results[0].name;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // last resort: treat as ticker
+    if (!sym && rawInput.length >= 1) {
+      const compact = rawInput.replace(/\s/g, "").toUpperCase();
+      if (/^[A-Z0-9.\-^]+$/.test(compact)) sym = compact;
+    }
+
+    if (!sym) {
+      setError("Enter a valid ticker (e.g. AAPL) or choose a company from suggestions.");
+      setTimeout(() => setError(""), 4500);
+      return;
+    }
+
+    navigate("/selladvice", { state: { symbol: sym, name: displayName || undefined } });
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    const q = symbol.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      setSuggestOpen(false);
+      return;
+    }
+
+    const t = setTimeout(async () => {
+      try {
+        setSuggestLoading(true);
+        const results = await searchTickers(q);
+        if (!cancelled) {
+          setSuggestions(results);
+          setSuggestOpen(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setSuggestions([]);
+          setSuggestOpen(false);
+        }
+      } finally {
+        if (!cancelled) setSuggestLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [symbol]);
 
   const handleprofileClick = async () => {
     try {
@@ -222,7 +310,14 @@ function Home() {
     { symbol: "MSFT", name: "Microsoft Corp." },
     { symbol: "NVDA", name: "NVIDIA Corp." },
     { symbol: "AMZN", name: "Amazon.com, Inc." },
+    { symbol: "GOOGL", name: "Alphabet Inc." },
+    { symbol: "META", name: "Meta Platforms Inc." },
+    { symbol: "JPM", name: "JPMorgan Chase & Co." },
+    { symbol: "V", name: "Visa Inc." },
+    { symbol: "JNJ", name: "Johnson & Johnson" },
   ];
+
+  const famousCards = useMemo(() => famousStocks, []);
 
   return (
     <div
@@ -269,16 +364,67 @@ function Home() {
                   <input
                     type="text"
                     value={symbol}
-                    onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                    onKeyPress={(e) => e.key === "Enter" && handleAnalyze()}
-                    placeholder="Enter stock symbol (e.g. AAPL)"
+                    onChange={(e) => {
+                      setSymbol(e.target.value);
+                      setSelectedSymbol("");
+                      setSelectedName("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAnalyze();
+                      }
+                    }}
+                    placeholder="Search company or ticker (e.g. Apple or AAPL)"
                     className="block w-full rounded-xl border-0 py-4 pl-11 pr-32 text-[#0d171b] shadow-lg shadow-slate-200/50 ring-1 ring-inset ring-[#cfdfe7] placeholder:text-[#4c809a] focus:ring-2 focus:ring-inset focus:ring-[#13a4ec] bg-white dark:bg-slate-800/50 dark:text-white dark:ring-slate-600 sm:text-sm sm:leading-6 transition-all"
                     style={{ fontFamily: "Manrope, sans-serif" }}
+                    onFocus={() => suggestions.length > 0 && setSuggestOpen(true)}
+                    onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
                   />
+                  {suggestOpen && (
+                    <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 rounded-xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-700 shadow-lg overflow-hidden text-left">
+                      {suggestLoading ? (
+                        <div className="px-4 py-3 text-sm text-[#4c809a] dark:text-slate-400 flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#13a4ec]" />
+                          Searching…
+                        </div>
+                      ) : suggestions.length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-[#4c809a] dark:text-slate-400">
+                          No matches found.
+                        </div>
+                      ) : (
+                        suggestions.map((sug) => (
+                          <button
+                            key={sug.symbol}
+                            type="button"
+                            className="w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex items-start justify-between gap-4"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setSelectedSymbol(sug.symbol);
+                              setSelectedName(sug.name);
+                              setSymbol(`${sug.name} (${sug.symbol})`);
+                              setSuggestOpen(false);
+                              navigate("/selladvice", { state: { symbol: sug.symbol, name: sug.name } });
+                            }}
+                          >
+                            <div className="min-w-0">
+                              <div className="text-sm font-bold text-[#0d171b] dark:text-white truncate">
+                                {sug.name}
+                              </div>
+                              <div className="text-xs text-[#4c809a] dark:text-slate-400 truncate">
+                                {sug.exchange}
+                              </div>
+                            </div>
+                            <div className="text-xs font-bold text-[#13a4ec] shrink-0">{sug.symbol}</div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                   <div className="absolute inset-y-0 right-1.5 flex py-1.5">
                     <button
                       onClick={handleAnalyze}
-                      disabled={!symbol}
+                      disabled={!selectedSymbol && !symbol.trim()}
                       className="inline-flex items-center rounded-lg bg-[#13a4ec] hover:bg-[#0f8ac4] disabled:bg-slate-300 disabled:cursor-not-allowed px-6 py-2 text-sm font-bold text-white shadow-md shadow-[#13a4ec]/20 hover:shadow-lg transition-all"
                     >
                       Analyze
@@ -302,7 +448,7 @@ function Home() {
               </p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {famousStocks.map((stock) => (
+              {famousCards.map((stock) => (
                 <StockRiskCard key={stock.symbol} {...stock} />
               ))}
             </div>

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 import traceback
 import joblib
 import os
+import yfinance as yf
 
 from datetime import datetime, timezone
 from utils.feature_engineering import get_features, FEATURES
@@ -39,6 +40,13 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
                 status_code=500,
                 detail="ML model not loaded"
             )
+
+        company_name = None
+        try:
+            info = yf.Ticker(symbol.upper()).info or {}
+            company_name = info.get("shortName") or info.get("longName") or info.get("displayName")
+        except Exception:
+            company_name = None
 
         # -------- Fetch features and chart series --------
         features_df, chart_data, price_change_pct, current_price, error_msg = get_features(symbol)
@@ -176,6 +184,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
 
         return {
             "symbol": symbol.upper(),
+            "company_name": company_name,
             "risk_score": round(float(risk_score), 3),
             "price_change": price_change_pct,
             "risk_level": risk_level,
@@ -183,7 +192,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
             "recommendation": recommendation,
             "reasons": reasons,
             "charts": chart_data or {},
-            "current_price": round(float(current_price), 2)
+            "current_price": round(float(current_price), 2) if current_price is not None else None,
         }
 
     except HTTPException:
