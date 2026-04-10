@@ -320,7 +320,7 @@ function Home() {
       <Header onProfileClick={handleprofileClick} />
       <main className="grow">
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24">
+        <section className="relative overflow-visible pt-12 pb-16 lg:pt-20 lg:pb-24">
           <div
             aria-hidden="true"
             className="absolute inset-x-0 top-0 -z-10 transform-gpu overflow-hidden blur-3xl"
