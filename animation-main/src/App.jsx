@@ -9,6 +9,7 @@ import About from "./components/About.jsx";
 import MarketOverview from "./components/MarketOverview.jsx";
 import Profile from "./components/Profile.jsx";
 import AuthError from "./components/auth_error.jsx";
+import NotificationBell from "./components/NotificationBell.jsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/market-overview" element={<MarketOverview />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/auth-error" element={<AuthError />} />
+        <Route path="/notifications" element={<NotificationBell />} />
       </Routes>
     </BrowserRouter>
   );

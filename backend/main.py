@@ -227,3 +227,6 @@ app.include_router(market_router)
 # ---------------- PROFILE ----------------
 from routes.profile import router as profile_router
 app.include_router(profile_router)
+# ------------------ NOTIFICATIONS ----------------
+from routes.notifications import router as notifications_router
+app.include_router(notifications_router)

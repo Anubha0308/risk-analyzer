@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
+import NotificationBell from "./notificationBell.jsx";
 
 // Helper function to fetch risk data
 const fetchRiskData = async (symbol) => {
@@ -31,7 +32,7 @@ const searchTickers = async (query) => {
   return Array.isArray(data?.quotes) ? data.quotes : [];
 };
 
-const Header = ({ onProfileClick }) => (
+const Header = ({ onProfileClick, onNotificationsClick }) => (
   <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d171b]/95 backdrop-blur-md">
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="flex h-16 items-center justify-between">
@@ -65,6 +66,9 @@ const Header = ({ onProfileClick }) => (
           </a>
         </nav>
         <div className="flex items-center gap-3">
+          <NotificationBell 
+          onClick={onNotificationsClick}
+          />
           <button
             onClick={onProfileClick}
             className="flex items-center justify-center rounded-lg bg-[#0d171b] dark:bg-slate-800 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
@@ -296,6 +300,30 @@ function Home() {
       setTimeout(() => setError(""), 3000);
     }
   };
+
+  const handlenotificationsClick = async () => {
+    try {
+      const response = await fetch(`${backend_url}/notifications`, {
+        method: "GET",
+        credentials: "include", // Important for cookies
+      });
+      if (response.ok) {
+        //if user logged in
+        navigate("/notifications");
+      } else {
+        // Handle error from backend
+        if (response.status === 401 || response.status === 404) {
+          setError("login to access notifications");
+          // Clear error after 3 seconds
+          setTimeout(() => setError(""), 3000);
+        }
+      }
+    } catch (err) {
+      setError("Network error. Please check if the server is running.");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
   const famousStocks = [
     { symbol: "AAPL", name: "Apple Inc." },
     { symbol: "TSLA", name: "Tesla Inc." },
@@ -317,7 +345,7 @@ function Home() {
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
-      <Header onProfileClick={handleprofileClick} />
+      <Header onProfileClick={handleprofileClick} onNotificationsClick={handlenotificationsClick} />
       <main className="grow">
         {/* Hero Section */}
         <section className="relative overflow-visible pt-12 pb-16 lg:pt-20 lg:pb-24">
