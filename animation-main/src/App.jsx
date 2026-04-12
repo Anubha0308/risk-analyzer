@@ -9,7 +9,7 @@ import About from "./components/About.jsx";
 import MarketOverview from "./components/MarketOverview.jsx";
 import Profile from "./components/Profile.jsx";
 import AuthError from "./components/auth_error.jsx";
-import NotificationBell from "./components/NotificationBell.jsx";
+import NotificationBell from "./components/notificationBell.jsx";
 
 function App() {
   return (
