@@ -26,7 +26,7 @@ jobs:
 
       - name: Run scanner
         env:
-          MONGODB_URI: ${{ secrets.MONGO_URI }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
         run: |
           cd backend
           python scanner.py
