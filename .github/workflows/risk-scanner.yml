@@ -3,9 +3,9 @@
 name: RiskAI Scanner
 
 on:
-  schedule:
-    - cron: '45 3 * * 1-5'   # 9:15 AM IST — market open
-    - cron: '0 10 * * 1-5'   # 3:30 PM IST — market close
+  # schedule:
+    # - cron: '45 3 * * 1-5'   # 9:15 AM IST — market open
+    # - cron: '0 10 * * 1-5'   # 3:30 PM IST — market close
   workflow_dispatch:           # manual trigger from GitHub UI for testing
 
 jobs:
