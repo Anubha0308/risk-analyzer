@@ -10,13 +10,20 @@ client = MongoClient(MONGO_URI)
 db = client["risk-analyzer"]
 users_collection = db["users"]
 user_info_collection = db["user_info"]
-user_stocks_info_collection = db["user_stocks_info"]#user specific stock info as to what does a user saw the last time 
 notifications_collection = db["notifications"]
+portfolios_collection = db["portfolios"]
+holdings_collection = db["holdings"]
 
 # ensure unique email
 users_collection.create_index("email", unique=True)
 user_info_collection.create_index("email", unique=True)
-user_stocks_info_collection.create_index("email", unique=True) #inside it stock should be unique as well 
-# ensure unique stock per user 
-#during login store user email in user_stocks_info_collection
-
+portfolios_collection.create_index("email")
+portfolios_collection.create_index(
+    [("email", 1), ("name", 1)],
+    unique=True,
+)
+holdings_collection.create_index([("portfolio_id", 1), ("email", 1)])
+holdings_collection.create_index(
+    [("portfolio_id", 1), ("symbol", 1)],
+    unique=True,
+)

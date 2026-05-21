@@ -408,20 +408,13 @@ function SellAdvice() {
                         {prediction.risk_level} RISK
                       </div>
                     <RiskGauge value={(prediction.risk_score || 0) * 100} />
-                    <div className="text-center flex flex-row gap-2">
+                    <div className="text-center flex flex-row gap-4 items-center">
                         <div className="text-sm text-[#4c809a] dark:text-slate-400">
-                            Risk Score
+                            Risk Score(chance of a 5%+ drop this week)
                         </div>
                         <div className="text-3xl font-bold text-[#0d171b] dark:text-white">
                             {((prediction.risk_score || 0) * 100).toFixed(1)}%
                         </div>
-                        <div className="text-xs text-[#4c809a] dark:text-slate-400">
-                            Risk Change since last analysis
-                        </div>
-                        <div className="text-xl font-bold text-[#0d171b] dark:text-white">
-                            {prediction.risk_change !== null ? `${((prediction.risk_change || 0) * 100).toFixed(1)}%` :"N/A"}
-                        </div>
-
                     </div>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils.feature_engineering import get_features, FEATURES
-from database import user_info_collection, user_stocks_info_collection, notifications_collection
+from database import user_info_collection, notifications_collection
 
 # ── Model — same pattern as prediction.py ───────────────────
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))  # scanner.py is at root
@@ -22,16 +22,6 @@ try:
 except Exception:
     model = None
 
-
-
-def get_previous_risk(user_email: str, symbol: str) -> float | None:
-    user_data = user_stocks_info_collection.find_one({"email": user_email})
-    if not user_data or "stocks" not in user_data:
-        return None
-    for stock in user_data["stocks"]:
-        if stock.get("symbol") == symbol:
-            return stock.get("risk_score")
-    return None
 
 
 def already_notified(user_email: str, symbol: str, notif_type: str) -> bool:
@@ -111,7 +101,6 @@ def notify_user(user_email: str, symbol: str, data: dict):
     sma_20        = data["sma_20"]
     sma_50        = data["sma_50"]
     return_5d     = data["return_5d"]
-    previous_risk = get_previous_risk(user_email, symbol)
     return_pct    = round(return_5d * 100, 2)
 
     # ── MARKET-BASED ───────────────────────────────────────
@@ -182,22 +171,7 @@ def notify_user(user_email: str, symbol: str, data: dict):
             risk_score
         )
 
-    # ── USER-SPECIFIC ──────────────────────────────────────
-
-    if previous_risk is not None:
-        if (risk_score - previous_risk) >= 0.2:
-            save_notification(
-                user_email, symbol, "risk_increased",
-                f"{symbol} downside risk increased from {previous_risk:.2f} to {risk_score:.2f} since your last analysis.",
-                risk_score
-            )
-
-        if previous_risk > 0.6 and risk_score < 0.4:
-            save_notification(
-                user_email, symbol, "risk_cleared",
-                f"{symbol} downside risk improved from {previous_risk:.2f} to {risk_score:.2f} — looking healthier.",
-                risk_score
-            )
+    
 
 
 

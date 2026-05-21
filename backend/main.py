@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 from starlette.middleware.sessions import SessionMiddleware
 import os
 
-from database import users_collection,user_info_collection, user_stocks_info_collection
+from database import users_collection,user_info_collection
 from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
 from core.rate_limiter import setup_rate_limiter, limiter
@@ -75,10 +75,6 @@ def register(request: Request, data: AuthRequest, response: Response):
         "watchlist":[],
         "recently_viewed":[],#upto 6 stocks
         "full_name":""
-    })
-    user_stocks_info_collection.insert_one({
-        "email":data.email,
-        "stocks": [] #list of stocks like key value pairs
     })
     token = create_access_token(data.email)
 
@@ -175,10 +171,7 @@ async def google_callback(request: Request):
             "recently_viewed": [],
             "full_name": ""
         })
-        user_stocks_info_collection.insert_one({
-            "email": email,
-            "stocks": [] 
-        })
+        
         
 
     # Create JWT
@@ -230,3 +223,6 @@ app.include_router(profile_router)
 # ------------------ NOTIFICATIONS ----------------
 from routes.notifications import router as notifications_router
 app.include_router(notifications_router)
+# ---------------- PORTFOLIO ----------------
+from routes.portfolio import router as portfolio_router
+app.include_router(portfolio_router)

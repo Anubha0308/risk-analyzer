@@ -9,7 +9,9 @@ const Header = () => (
         <div className="flex items-center gap-2.5">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#13a4ec]/10 text-[#13a4ec] ring-1 ring-[#13a4ec]/20">
-              <span className="material-symbols-outlined text-xl">candlestick_chart</span>
+              <span className="material-symbols-outlined text-xl">
+                candlestick_chart
+              </span>
             </div>
             <span
               className="text-xl font-bold tracking-tight text-[#0d171b] dark:text-white"
@@ -68,21 +70,14 @@ const WatchlistCard = ({ symbol, onRemove, isEditing }) => {
     </div>
   );
 
-  // ⛔ While editing → NOT clickable
   if (isEditing) return cardContent;
 
-  // ✅ Normal mode → clickable
   return (
-    <Link
-      to="/selladvice"
-      state={{ symbol }}
-      className="block"
-    >
+    <Link to="/selladvice" state={{ symbol }} className="block">
       {cardContent}
     </Link>
   );
 };
-
 
 function Profile() {
   const navigate = useNavigate();
@@ -155,7 +150,7 @@ function Profile() {
   };
 
   const handleSave = async () => {
-    try{
+    try {
       setSaving(true);
       setError("");
       const response = await fetch(`${backend_url}/profile`, {
@@ -184,6 +179,10 @@ function Profile() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleportfolio = async () => {
+    navigate("/portfolios");
   };
 
   const handleLogout = async () => {
@@ -253,7 +252,9 @@ function Profile() {
       <main className="grow p-6 sm:p-10">
         <div className="mx-auto max-w-4xl">
           <div className="mb-10">
-            <h1 className="text-4xl font-bold text-[#0d171b] dark:text-white mb-2">User Profile</h1>
+            <h1 className="text-4xl font-bold text-[#0d171b] dark:text-white mb-2">
+              User Profile
+            </h1>
             <p className="text-[#4c809a] dark:text-slate-400 text-lg">
               Manage your account details and view your activity.
             </p>
@@ -270,7 +271,9 @@ function Profile() {
             <h2 className="text-2xl font-bold mb-6">Account Information</h2>
             <div className="space-y-6">
               <div>
-                <label className="text-sm font-semibold text-[#4c809a] dark:text-slate-400">Full Name</label>
+                <label className="text-sm font-semibold text-[#4c809a] dark:text-slate-400">
+                  Full Name
+                </label>
                 {isEditing ? (
                   <input
                     type="text"
@@ -286,8 +289,12 @@ function Profile() {
                 )}
               </div>
               <div>
-                <label className="text-sm font-semibold text-[#4c809a] dark:text-slate-400">Email Address</label>
-                <p className="mt-1 text-lg font-medium text-[#0d171b] dark:text-white">{userData.email}</p>
+                <label className="text-sm font-semibold text-[#4c809a] dark:text-slate-400">
+                  Email Address
+                </label>
+                <p className="mt-1 text-lg font-medium text-[#0d171b] dark:text-white">
+                  {userData.email}
+                </p>
               </div>
             </div>
             <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 flex gap-3">
@@ -337,7 +344,9 @@ function Profile() {
                 <input
                   type="text"
                   value={newStockSymbol}
-                  onChange={(e) => setNewStockSymbol(e.target.value.toUpperCase())}
+                  onChange={(e) =>
+                    setNewStockSymbol(e.target.value.toUpperCase())
+                  }
                   onKeyDown={(e) => e.key === "Enter" && handleAddStock()}
                   placeholder="Enter stock symbol (e.g. AAPL)"
                   className="flex-1 rounded-lg border-0 py-2 px-3 text-[#0d171b] shadow-sm ring-1 ring-inset ring-[#cfdfe7] placeholder:text-[#4c809a] focus:ring-2 focus:ring-inset focus:ring-[#13a4ec] bg-white dark:bg-slate-700 dark:text-white dark:ring-slate-600 sm:text-sm"
@@ -365,14 +374,35 @@ function Profile() {
             ) : (
               <div className="text-center py-12 px-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
                 <p className="text-[#4c809a] dark:text-slate-400">
-                  {isEditing ? "Add stocks to your watchlist" : "Your watchlist is empty."}
+                  {isEditing
+                    ? "Add stocks to your watchlist"
+                    : "Your watchlist is empty."}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Recently Viewed Stocks Section */}
+          {/* Portfolios */}
           <div>
+            <h2 className="text-2xl font-bold mb-6">Portfolios</h2>
+            <Link
+              to="/portfolios"
+              className="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-5 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 transition-all duration-300 hover:shadow-lg hover:ring-[#13a4ec]/50 dark:hover:ring-[#13a4ec]/50"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">
+                    Manage Portfolios
+                  </h3>
+                </div>
+                <span className="text-sm font-semibold text-[#13a4ec] opacity-0 group-hover:opacity-100 transition-opacity">
+                  see
+                </span>
+              </div>
+            </Link>
+          </div>
+          {/* Recently Viewed Stocks Section */}
+          <div className="mt-10">
             <h2 className="text-2xl font-bold mb-6">Recently Viewed Stocks</h2>
             {userData.recently_viewed && userData.recently_viewed.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
