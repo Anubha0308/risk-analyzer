@@ -5,8 +5,10 @@
 //get all the portfolios from the backend and display then in a grid
 
 import React from "react";
-
+import { FaRegEdit as RenameIcon } from "react-icons/fa";
+import { FaCheck } from 'react-icons/fa';
 import { backend_url } from "../config";
+import ErrorDisplay from "./ErrorDisplay";
 
 import { useState, useEffect } from "react";
 
@@ -24,6 +26,10 @@ function Portfolios() {
   const [adding, setAdding] = useState(false);
 
   const [name, setName] = useState("");
+
+  const [rename, setRename] = useState("");
+  const [renamingId, setRenamingId] = useState(null);
+  const [renaming, setRenaming] = useState(false);
 
   const getPortFolios = async () => {
     setFetching(true);
@@ -70,10 +76,10 @@ function Portfolios() {
   };
 
   const handleCreatePortfolio = async (portfolioName) => {
-    if (!portfolioName.trim()) return alert("Enter portfolio name");
+    if (!portfolioName.trim()) return setError("Enter portfolio name");
 
     if (portfolioName.length > 20)
-      return alert("Portfolio name should be less than 20 characters");
+      return setError("Portfolio name should be less than 20 characters");
 
     const response = await fetch(`${backend_url}/create_portfolio`, {
       method: "POST",
@@ -90,7 +96,7 @@ function Portfolios() {
     const result = await response.json();
 
     if (!response.ok) {
-      alert(result.detail || result.message || "Failed to create portfolio");
+      setError(result.detail || result.message || "Failed to create portfolio");
 
       return;
     }
@@ -102,6 +108,37 @@ function Portfolios() {
     getPortFolios();
   };
 
+  const handleRename = async (portfolioId, currentName) => {
+    setRenaming(true);
+    setRename(currentName);
+    setRenamingId(portfolioId);
+  };
+
+  const handlerenamesave = async () => {
+    if (!rename.trim()) return setError("Enter portfolio name");
+
+    const response = await fetch(`${backend_url}/rename_portfolio`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ id: renamingId, name: rename }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setError(result.detail || result.message || "Failed to rename portfolio");
+      return;
+    }
+
+    setRenaming(false);
+    setRename("");
+    setRenamingId(null);
+    getPortFolios();
+  };
+
   useEffect(() => {
     getPortFolios();
   }, []);
@@ -110,6 +147,7 @@ function Portfolios() {
     <>
       {adding ? (
         <div className="fixed inset-0 bg-[#0f1727] flex items-center justify-center">
+          {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
           <div className="bg-[#0d171b] border border-[#4c5f8e] p-6 rounded-2xl flex flex-col items-center shadow-xl">
             <h2 className="text-2xl font-bold mb-6 text-white">
               Create New Portfolio
@@ -147,6 +185,7 @@ function Portfolios() {
         </div>
       ) : (
         <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
+          {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
           {/* Top Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -165,11 +204,6 @@ function Portfolios() {
             </button>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="text-center text-red-400 mb-4">{error}</div>
-          )}
-
           {/* Loading */}
           {fetching ? (
             <div className="text-center text-gray-400 mt-20">
@@ -184,16 +218,39 @@ function Portfolios() {
               {portfolios.map((portfolio) => (
                 <div
                   key={portfolio._id}
-                  onClick={() => navigate(`/Oneportfolio/${portfolio._id}`)}
                   className="bg-[#0d171b] border border-[#4c5f8e] rounded-2xl p-6 cursor-pointer hover:border-[#13a3ea] hover:-translate-y-1 transition-all duration-200 shadow-lg"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-white">
-                        {portfolio.name}
-                      </h3>
-
-                      <p className="text-gray-400 text-sm mt-2">
+                      {renamingId===portfolio._id ? 
+                      (
+                        <div className="flex items-center gap-2">
+                        <input
+                        className="bg-[#0f1727] border border-[#4c5f8e] p-2 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
+                        placeholder={portfolio.name}
+                        value={rename}
+                        onChange={(e) => setRename(e.target.value)}
+                        />
+                        <FaCheck
+                          className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
+                          onClick={(e) => handlerenamesave()}
+                        />
+                        </div>
+                      )
+                      : (
+                        <h3 className="text-xl font-bold text-white">
+                          {portfolio.name}
+                        </h3>
+                      )}
+                      <span>
+                        <RenameIcon
+                          className="text-gray-400 mt-2 hover:text-[#13a3ea] transition-all cursor-pointer"
+                          onClick={(e) => {
+                            handleRename(portfolio._id, portfolio.name);
+                          }}
+                        />
+                      </span>
+                      <p className="text-gray-400 text-sm mt-2" onClick={() => navigate(`/Oneportfolio/${portfolio._id}`)}>
                         Click to view portfolio
                       </p>
                     </div>

@@ -275,7 +275,7 @@ async def get_portfolios(user: str = Depends(get_current_user)):
         )
         #make it a list 
         portfolios = [
-            {"_id": str(portfolio["_id"]), "name": portfolio["name"]}
+            {"_id": str(portfolio["_id"]), "name": portfolio["name"]} # we have the _id also in portfolios list 
             for portfolio in portfolios_cursor
         ]
 
@@ -323,6 +323,30 @@ async def create_portfolio(request: Request, user: str = Depends(get_current_use
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.put("/rename_portfolio")
+async def rename_portfolio(request: Request, user: str = Depends(get_current_user)):
+    try:
+        data = await request.json()
+        portfolio_id = data.get("id")
+        newname = data.get("name")
+        oid =  _parse_portfolio_id(portfolio_id)
+        
+        if not newname or not str(newname).strip():
+            raise HTTPException(status_code=400, detail="Portfolio name is required")
+        
+        portfolios_collection.update_one(
+            {"_id": oid},
+            {"$set": {"name": newname}}
+        )
+        return {"success": True}
+        
+    except HTTPException:  
+        raise
+    except Exception as e: 
+        raise HTTPException(status_code=500, detail=str(e))
+        
+        
+        
 @router.get("/get_portfolio/{portfolio_id}")
 async def get_portfolio(portfolio_id: str, user: str = Depends(get_current_user)):#in the body from frontend we receive id 
     try:

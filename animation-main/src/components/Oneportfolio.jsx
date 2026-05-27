@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { backend_url } from "../config";
-import PortfolioAnalyze from "./portfolioAnalyze";
+import ErrorDisplay from "./ErrorDisplay";
 
 function Oneportfolio() {
   const { id } = useParams();
+  const [error, setError] = useState("");
   const [getting, setGetting] = useState(false);
   const [Portfolioname, setPortfolioname] = useState("");
   const [holdings, setHoldings] = useState([]);
@@ -31,7 +32,7 @@ function Oneportfolio() {
     });
     const portfolio = await response.json();
     if (!response.ok) {
-      alert(
+      setError(
         "Failed to fetch portfolio details: " +
           (portfolio.detail || portfolio.message || "Unknown error"),
       );
@@ -59,7 +60,7 @@ function Oneportfolio() {
       !newStockPrice ||
       !newStockDate
     ) {
-      alert("Please fill all the fields");
+      setError("Please fill all the fields");
       setIsSubmitting(false);
       return;
     }
@@ -68,11 +69,18 @@ function Oneportfolio() {
       isNaN(newStockPrice) ||
       isNaN(Date.parse(newStockDate))
     ) {
-      alert("Quantity, Price, and Date must be valid");
+      setError("Quantity, Price, and Date must be valid");
+      setIsSubmitting(false);
+      return;
+    }
+    if(newStockDate > new Date().toISOString().split("T")[0]){
+      setError("Buy date cannot be in the future");
+      setIsSubmitting(false);
       return;
     }
     if (Number(newStockQuantity) <= 0 || Number(newStockPrice) <= 0) {
-      alert("Quantity and Price must be greater than zero");
+      setError("Quantity and Price must be greater than zero");
+      setIsSubmitting(false);
       return;
     }
     const response = await fetch(`${backend_url}/add_stock`, {
@@ -100,7 +108,7 @@ function Oneportfolio() {
       setNewStockDate("");
       setAdding(false);
     } else {
-      alert("Failed to add stock: " + (result.detail || result.message));
+      setError("Failed to add stock: " + (result.detail || result.message));
     }
     setIsSubmitting(false);
   };
@@ -122,7 +130,7 @@ function Oneportfolio() {
       //remove from holdings
       setHoldings(holdings.filter((stock) => stock._id !== _id));
     } else {
-      alert("Failed to delete stock: " + result.message);
+      setError("Failed to delete stock: " + result.message);
     }
   };
 
@@ -140,11 +148,15 @@ function Oneportfolio() {
   const handleUpdateStock = async (_id) => {
     //validate
     if (isNaN(newStockQuantity) || isNaN(newStockPrice)) {
-      alert("Quantity and Price must be numbers");
+      setError("Quantity and Price must be numbers");
       return;
     }
     if (Number(newStockQuantity) <= 0 || Number(newStockPrice) <= 0) {
-      alert("Quantity and Price must be greater than zero");
+      setError("Quantity and Price must be greater than zero");
+      return;
+    }
+    if(newStockDate > new Date().toISOString().split("T")[0]){
+      setError("Buy date cannot be in the future");
       return;
     }
     const response = await fetch(`${backend_url}/update_stock`, {
@@ -171,14 +183,14 @@ function Oneportfolio() {
                 ...stock,
                 quantity: Number(newStockQuantity),
                 price: Number(newStockPrice),
-
+                buyDate: newStockDate,
               }
             : stock,
         ),
       );
       setEditingId(null);
     } else {
-      alert("Failed to update stock: " + result.message);
+      setError("Failed to update stock: " + result.message);
     }
   };
   //we have the portfolio holdings already in the frontend so maybe we can use that only for analyzing on backend
@@ -197,7 +209,7 @@ function Oneportfolio() {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-      alert(result.detail || result.message || "Failed to analyze portfolio");
+      setError(result.detail || result.message || "Failed to analyze portfolio");
       setAnalysing(false);
       return;
     }
@@ -211,6 +223,7 @@ function Oneportfolio() {
   };
   return (
     <div className="min-h-screen bg-[#0d171b]/95 backdrop-blur-md text-white p-6">
+      {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
       <div className="max-w-6xl mx-auto bg-[#0d171b] rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-[#13a3ea]">{Portfolioname}</h1>
