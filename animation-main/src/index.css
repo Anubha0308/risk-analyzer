@@ -59,7 +59,8 @@ h1 {
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid;
+  border-color:#13a4ec;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
@@ -69,11 +70,11 @@ button {
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  box-shadow: 0 0 0.5rem 1px rgba(220, 221, 235, 0.742);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px auto -webkit-focus-ring-color;
 }
 
 @media (prefers-color-scheme: light) {

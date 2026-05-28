@@ -229,7 +229,6 @@ function Oneportfolio() {
           <h1 className="text-2xl font-bold text-[#13a3ea]">{Portfolioname}</h1>
 
           <button
-            className="bg-[#13a3ea] text-white px-4 py-2 rounded hover:bg-[#13a3ea]/80"
             onClick={() => setAdding(true)}
           >
             + Add Stock
@@ -327,14 +326,12 @@ function Oneportfolio() {
                       ) : (
                         <div className="flex gap-2">
                           <button
-                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                             onClick={() => handleEditStock(stock._id)}
                           >
                             Edit
                           </button>
 
                           <button
-                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                             onClick={() => handleDeleteStock(stock._id)}
                           >
                             Delete
@@ -348,7 +345,6 @@ function Oneportfolio() {
             </table>
             <div>
               <button
-                className="bg-[#13a3ea] text-white px-4 py-2 rounded hover:bg-[#13a3ea]/80 mt-4 mb-4 ml-2"
                 onClick={handleAnalyzePortfolio}
               >
                 Analyze Portfolio{" "}
@@ -403,14 +399,12 @@ function Oneportfolio() {
 
             <div className="flex gap-3 mt-5">
               <button
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                 onClick={handlenewstock}
               >
                 Add
               </button>
 
               <button
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                 onClick={() => setAdding(false)}
               >
                 Cancel

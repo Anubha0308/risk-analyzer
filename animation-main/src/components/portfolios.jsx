@@ -164,14 +164,12 @@ function Portfolios() {
 
               <div className="flex gap-3">
                 <button
-                  className="bg-[#13a3ea] border border-[#4c5f8e] text-white px-4 py-2 hover:opacity-90 transition-all"
                   onClick={() => handleCreatePortfolio(name)}
                 >
                   Create
                 </button>
 
                 <button
-                  className="bg-[#4c5f8e] border border-[#4c5f8e] text-white px-4 py-2 hover:opacity-90 transition-all"
                   onClick={() => {
                     setAdding(false);
                     setName("");
@@ -197,7 +195,6 @@ function Portfolios() {
             </div>
 
             <button
-              className="bg-[#13a3ea] text-white px-5 py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
               onClick={() => setAdding(true)}
             >
               + New Portfolio
