@@ -1,2 +1,2 @@
-rightnow in Edit stock , buy date update does not work 
-tried to correct it in Oneportfolio.jsx - check once 
+rightnow in Edit stock , buy date update works but appears only after refreshing the page
+password validaation missing 

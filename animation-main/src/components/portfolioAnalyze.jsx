@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -15,7 +15,9 @@ import {
 function PortfolioAnalyze() {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { id: routeId } = useParams();
   const data = state?.analysisData;
+  const id = data?.portfolio_id || routeId;
 
   if (!data) { // if no data is there to display
     return (
@@ -242,7 +244,8 @@ function PortfolioAnalyze() {
             {data.risk_alert}
           </div>
 
-          <button className="w-full border border-green-500 text-green-400 rounded-lg py-3 font-semibold hover:bg-green-500/10">
+          <button className="w-full border border-green-500 text-green-400 rounded-lg py-3 font-semibold hover:bg-green-500/10"
+            onClick={() => navigate(`/optimize/${id}`)}>
             View Optimized Portfolio
           </button>
         </div>

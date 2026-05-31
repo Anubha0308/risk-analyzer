@@ -226,3 +226,6 @@ app.include_router(notifications_router)
 # ---------------- PORTFOLIO ----------------
 from routes.portfolio import router as portfolio_router
 app.include_router(portfolio_router)
+
+from routes.optimize_portfolio import router as optimize_router
+app.include_router(optimize_router)

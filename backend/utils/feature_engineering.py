@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pandas_ta as ta
 import yfinance as yf
-
+from utils.market_data import get_price_history,get_current_price_info
 # -------------------------------------------------
 # FEATURES (must match training-time order exactly)
 # -------------------------------------------------
@@ -117,75 +117,12 @@ def get_features(symbol: str):
     error_msg = None
     
     try:
-        # Use yf.Ticker for more reliable single symbol downloads
-        ticker = yf.Ticker(symbol.upper())
-        
-        # Try history() first
-        try:
-            df = ticker.history(period="6mo")
-        except Exception as history_error:
-            print(f"ticker.history() failed for {symbol}: {history_error}")
-            df = None
-        
-        # If history() fails or returns empty, try alternative method
-        if df is None or (hasattr(df, 'empty') and df.empty):
-            print(f"First attempt failed, trying yf.download() for {symbol}")
-            # Fallback: try download method
-            try:
-                df = yf.download(symbol.upper(), period="6mo", progress=False)
-                # yf.download can return empty DataFrame if it fails silently
-                # Also handle MultiIndex columns from download
-                if df is not None and not df.empty and isinstance(df.columns, pd.MultiIndex):
-                    df.columns = df.columns.get_level_values(0)
-            except Exception as download_error:
-                error_msg = f"Failed to download data for symbol {symbol}: {str(download_error)}"
-                print(error_msg)
-                import traceback
-                traceback.print_exc()
-                return None, None, None, error_msg
-                
-        if df is None or (hasattr(df, 'empty') and df.empty):
-            error_msg = f"Failed to download data for symbol {symbol}. Please check if the symbol is valid and try again."
-            print(error_msg)
-            print(f"Ticker object created: {ticker}")
-            print(f"DataFrame shape: {df.shape if df is not None else 'None'}")
-            return None, None, None, error_msg
+        df, error_msg = get_price_history(symbol, period="6mo", min_rows=50)
 
-        # Handle MultiIndex columns (yfinance sometimes returns these)
-        if isinstance(df.columns, pd.MultiIndex):
-            # Flatten column names by taking the first level
-            df.columns = df.columns.get_level_values(0)
+        if df is None:
+            return None, None, None, None, error_msg  # 5 values
 
-        # Ensure we have the required columns
-        required_cols = ["Open", "High", "Low", "Close", "Volume"]
-        missing_cols = [col for col in required_cols if col not in df.columns]
-        if missing_cols:
-            error_msg = f"Missing required columns: {missing_cols}. Available: {df.columns.tolist()}"
-            print(error_msg)
-            return None, None, None, error_msg
-
-        # Need at least 50 rows for SMA_50 to work
-        if len(df) < 50:
-            error_msg = f"Insufficient data: only {len(df)} rows available, need at least 50"
-            print(error_msg)
-            return None, None, None, error_msg
-
-        # Get previous close if available
-        # Get current price
-        
-        fast = ticker.fast_info
-
-        current_price = fast["last_price"]
-        prev_close = fast["previous_close"]
-        if prev_close is None and len(df)>=2:
-            prev_close = df["close"].iloc[-2] #fallback to second last close from df
-        if current_price is None and len(df)>=1:
-            current_price = df["close"].iloc[-1] #fallback to last close from df 
-        
-        if prev_close is not None and prev_close !=0 and current_price is not None:
-            price_change_pct = round((current_price - prev_close) / prev_close * 100,2) 
-        else:
-            price_change_pct = None
+        current_price, prev_close, price_change_pct = get_current_price_info(symbol, df)
 
         chart_data = _prepare_chart_data(df.copy())
 
@@ -193,10 +130,8 @@ def get_features(symbol: str):
 
         if feature_row is None:
             error_msg = "build_features returned None - likely all rows dropped due to NaN values"
-            print(error_msg)
-            return None, None, None, error_msg
+            return None, None, None, None, error_msg  # 5 values
 
-        # Model expects 2D input (DataFrame, not Series)
         return feature_row.to_frame().T, chart_data, price_change_pct, current_price, None
 
     except ValueError as ve:
@@ -204,10 +139,11 @@ def get_features(symbol: str):
         print(error_msg)
         import traceback
         traceback.print_exc()
-        return None, None, None, error_msg
+        return None, None, None, None, error_msg  # 5 values
+    
     except Exception as e:
         error_msg = f"Unexpected error fetching features for {symbol}: {str(e)}"
         print(error_msg)
         import traceback
         traceback.print_exc()
-        return None, None, None, error_msg
+        return None, None, None, None, error_msg  # 5 values

@@ -175,7 +175,7 @@ function Oneportfolio() {
     });
     const result = await response.json();
     if (result.success) {
-      // Update the holdings list with the updated stock
+      // Update the holdings list with the updated stock and reflect the changes in the UI
       setHoldings(
         holdings.map((stock) =>
           stock._id === _id
@@ -204,6 +204,7 @@ function Oneportfolio() {
       credentials: "include",
       body: JSON.stringify({
         portfolioId: id,
+        name: Portfolioname,
         holdings: holdings,
       }),
     });
@@ -346,6 +347,7 @@ function Oneportfolio() {
             <div>
               <button
                 onClick={handleAnalyzePortfolio}
+                className="mt-4 ml-2.5 mb-4"
               >
                 Analyze Portfolio{" "}
               </button>

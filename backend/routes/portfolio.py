@@ -10,6 +10,7 @@ import pandas as pd
 from auth_utils import get_current_user
 from database import portfolios_collection, holdings_collection
 from utils.feature_engineering import get_features, FEATURES
+from utils.portfolio_utils import get_portfolio_by_id, get_portfolio_holdings, get_portfolio_with_holdings
 
 router = APIRouter()
 
@@ -62,8 +63,9 @@ def _risk_label(score: float) -> str:
     return "Low Risk"
 
 
-def _empty_analysis(name: str) -> dict:
+def _empty_analysis(portfolio_id: str, name: str) -> dict:
     return {
+        "portfolio_id": portfolio_id,
         "portfolio_name": name,
         "summary": {
             "total_value": 0,
@@ -348,20 +350,16 @@ async def rename_portfolio(request: Request, user: str = Depends(get_current_use
         
         
 @router.get("/get_portfolio/{portfolio_id}")
-async def get_portfolio(portfolio_id: str, user: str = Depends(get_current_user)):#in the body from frontend we receive id 
+async def get_portfolio(portfolio_id: str, user: str = Depends(get_current_user)):
     try:
-        portfolio = _get_owned_portfolio(portfolio_id, user)
-        pid = str(portfolio["_id"])
+        # Use shared utility to fetch portfolio and holdings
+        portfolio, holdings = get_portfolio_with_holdings(portfolio_id, user)
 
-        holdings_cursor = holdings_collection.find(
-            {"portfolio_id": pid, "email": user}
-        )
-
-        holdings = [_serialize_holding(h) for h in holdings_cursor]
+        serialized_holdings = [_serialize_holding(h) for h in holdings]
 
         return {
             "name": portfolio["name"],
-            "holdings": holdings,
+            "holdings": serialized_holdings,
         }
 
     except HTTPException:
@@ -537,17 +535,18 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
     try:
         data = await request.json()
         portfolio_id = data.get("portfolioId") or data.get("PortfolioId")
+        portfolio_name = data.get("name")
         if not portfolio_id:
             raise HTTPException(status_code=400, detail="portfolioId is required")
 
-        portfolio = _get_owned_portfolio(portfolio_id, user)
-        pid = str(portfolio["_id"])
-
-        db_holdings = list(
-            holdings_collection.find({"portfolio_id": pid, "email": user})
-        )
+        # Use shared utility to fetch portfolio and holdings
+        portfolio, db_holdings = get_portfolio_with_holdings(portfolio_id, user)
+        
         if not db_holdings:
-            return {"success": True, "resultData": _empty_analysis(portfolio["name"])}
+            return {
+                "success": True,
+                "resultData": _empty_analysis(str(portfolio["_id"]), portfolio["name"]),
+            }
 
         rows = []
         total_value = 0.0
@@ -633,7 +632,8 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
         )
 
         result_data = {
-            "portfolio_name": portfolio["name"],
+            "portfolio_id": str(portfolio_id),
+            "portfolio_name": portfolio_name,
             "summary": {
                 "total_value": round(total_value, 2),
                 "total_value_change": round(total_day_change, 2),

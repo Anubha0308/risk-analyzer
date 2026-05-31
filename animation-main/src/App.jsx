@@ -13,6 +13,7 @@ import NotificationBell from "./components/notificationBell.jsx";
 import Portfolios from "./components/portfolios.jsx";
 import Oneportfolio from "./components/Oneportfolio.jsx";
 import PortfolioAnalyze from "./components/portfolioAnalyze.jsx";
+import OptimizePortfolio from "./components/optimized.jsx";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/portfolios" element={<Portfolios />} />
         <Route path="/Oneportfolio/:id" element={<Oneportfolio />} />
         <Route path="/portfolio-analysis/:id" element={<PortfolioAnalyze />} />
+        <Route path="/optimize/:id" element={<OptimizePortfolio />} />
       </Routes>
     </BrowserRouter>
   );
