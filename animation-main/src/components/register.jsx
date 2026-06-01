@@ -17,9 +17,16 @@ function Register() {
     return emailRegex.test(email);
   };
 
-  // Password validation (at least 6 characters)
+  // Password validation (at least 8 characters)
   const validatePassword = (password) => {
-    return password.length >= 6;
+    const validationRules = {
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password),
+    specialChar: /[^A-Za-z0-9]/.test(password),
+  };
+    return Object.values(validationRules).every(Boolean);
   };
 
   const handleGoogleLogin = () => {

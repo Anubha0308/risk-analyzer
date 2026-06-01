@@ -106,7 +106,7 @@ function SellAdvice() {
     }
 
     if (!sym) {
-      setError("Enter a valid ticker or choose a company from suggestions.");
+      setError("Enter a valid ticker or choose a company from suggestions.");//this is where the error is set when user enters an invalid ticker or company name 
       setTimeout(() => setError(""), 4500);
       return;
     }

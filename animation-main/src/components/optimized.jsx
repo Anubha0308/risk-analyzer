@@ -52,13 +52,21 @@ function OptimizePortfolio() {
             {error && <ErrorDisplay message={error} />}
             {getting ? (
               <div>
-                <button onClick={()=>navigate(-1)} >Back</button>
+                <button
+                  onClick={() => navigate(-1)}
+                >
+                  ← Back
+                </button>
                 <div className="text-center mt-2">Getting optimization results...</div>
               </div>):(
                 <div className="space-y-6">
-                <button onClick={()=>navigate(-1)} >Back</button>
+                <button
+                  onClick={() => navigate(-1)}
+                >
+                  ← Back
+                </button>  
                 <div className="text-center">Optimization complete! Check your portfolio for updated allocations.</div>
-                <div className="overflow-x-auto rounded-lg border border-gray-700 bg-[#0d1b2e] p-4 width-[80%] mx-auto">
+                <div className="overflow-x-auto rounded-lg border border-gray-700 bg-[#0d1b2e] p-6">
             <table className="w-full border border-gray-200 text-left">
               <thead className="bg-gray-100 text-black font-semibold">
                 <tr>

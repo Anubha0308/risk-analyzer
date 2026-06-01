@@ -6,7 +6,7 @@
 
 import React from "react";
 import { FaRegEdit as RenameIcon } from "react-icons/fa";
-import { FaCheck } from 'react-icons/fa';
+import { FaCheck } from "react-icons/fa";
 import { backend_url } from "../config";
 import ErrorDisplay from "./ErrorDisplay";
 
@@ -147,7 +147,9 @@ function Portfolios() {
     <>
       {adding ? (
         <div className="fixed inset-0 bg-[#0f1727] flex items-center justify-center">
-          {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
+          {error && (
+            <ErrorDisplay message={error} onClose={() => setError("")} />
+          )}
           <div className="bg-[#0d171b] border border-[#4c5f8e] p-6 rounded-2xl flex flex-col items-center shadow-xl">
             <h2 className="text-2xl font-bold mb-6 text-white">
               Create New Portfolio
@@ -163,9 +165,7 @@ function Portfolios() {
               />
 
               <div className="flex gap-3">
-                <button
-                  onClick={() => handleCreatePortfolio(name)}
-                >
+                <button onClick={() => handleCreatePortfolio(name)}>
                   Create
                 </button>
 
@@ -183,35 +183,34 @@ function Portfolios() {
         </div>
       ) : (
         <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
-          {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
+          {error && (
+            <ErrorDisplay message={error} onClose={() => setError("")} />
+          )}
           {/* Top Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-white">My Portfolios</h1>
+          <div className="flex items-center justify-between mb-1 mt-2">
+            <button onClick={() => navigate(-1)}>← Back</button>
+            <button onClick={() => setAdding(true)}>+ New Portfolio</button>
+          </div>
+          {/* Loading */}
+          {fetching ? (
+            <div className="text-center text-gray-400 mt-20 text-lg">
+              Fetching portfolios...
+            </div>
+          ) : portfolios.length === 0 ? (
+            <div className="text-center text-gray-400 mt-20 text-lg">
+              No portfolios found.
+            </div>
+          ) : (
+            <div className="max-w-6xl mx-auto flex flex-col gap-6">
+            <div className="mb-4">
+              <p className="text-4xl font-bold text-white">My Portfolios</p>
 
               <p className="text-gray-400 mt-1">
                 Manage and analyze your investment portfolios
               </p>
             </div>
-
-            <button
-              onClick={() => setAdding(true)}
-            >
-              + New Portfolio
-            </button>
-          </div>
-
-          {/* Loading */}
-          {fetching ? (
-            <div className="text-center text-gray-400 mt-20">
-              Fetching portfolios...
-            </div>
-          ) : portfolios.length === 0 ? (
-            <div className="text-center text-gray-400 mt-20">
-              No portfolios found.
-            </div>
-          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+             
               {portfolios.map((portfolio) => (
                 <div
                   key={portfolio._id}
@@ -219,22 +218,20 @@ function Portfolios() {
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      {renamingId===portfolio._id ? 
-                      (
+                      {renamingId === portfolio._id ? (
                         <div className="flex items-center gap-2">
-                        <input
-                        className="bg-[#0f1727] border border-[#4c5f8e] p-2 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
-                        placeholder={portfolio.name}
-                        value={rename}
-                        onChange={(e) => setRename(e.target.value)}
-                        />
-                        <FaCheck
-                          className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
-                          onClick={(e) => handlerenamesave()}
-                        />
+                          <input
+                            className="bg-[#0f1727] border border-[#4c5f8e] p-2 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
+                            placeholder={portfolio.name}
+                            value={rename}
+                            onChange={(e) => setRename(e.target.value)}
+                          />
+                          <FaCheck
+                            className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
+                            onClick={(e) => handlerenamesave()}
+                          />
                         </div>
-                      )
-                      : (
+                      ) : (
                         <h3 className="text-xl font-bold text-white">
                           {portfolio.name}
                         </h3>
@@ -247,7 +244,12 @@ function Portfolios() {
                           }}
                         />
                       </span>
-                      <p className="text-gray-400 text-sm mt-2" onClick={() => navigate(`/Oneportfolio/${portfolio._id}`)}>
+                      <p
+                        className="text-gray-300 text-sm mt-2"
+                        onClick={() =>
+                          navigate(`/Oneportfolio/${portfolio._id}`)
+                        }
+                      >
                         Click to view portfolio
                       </p>
                     </div>
@@ -258,6 +260,7 @@ function Portfolios() {
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           )}
         </div>

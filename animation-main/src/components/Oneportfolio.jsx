@@ -51,6 +51,19 @@ function Oneportfolio() {
     handleGetPortfolio();
   }, [id]); // if dependency is none then it will run only once , but if in url id changes then not that's why id dependency is there
 
+  const searchTickers = async (query) => {
+    const res = await fetch(
+      `${backend_url}/market/search?q=${encodeURIComponent(query)}&limit=6`,
+      {
+        headers: { Accept: "application/json" },
+        credentials: "include",
+      }
+      );
+      if (!res.ok) throw new Error("Failed to search tickers");
+      const data = await res.json();
+      return Array.isArray(data?.quotes) ? data.quotes : [];//this is returns the Array
+  };
+
   const handlenewstock = async () => {
     //validate the input fields entered  by user
     setIsSubmitting(true);
@@ -64,6 +77,59 @@ function Oneportfolio() {
       setIsSubmitting(false);
       return;
     }
+    //we need to check if the ticker user entered is valid or not 
+
+    const rawInput = (newStockSymbol || "").trim();
+    const compact = rawInput.replace(/\s/g, "").toUpperCase();//here removing all spaces from input and converting to uppercase
+    const isTickerLike = /^[A-Z0-9.\-^]+$/.test(compact);
+    //Apple Inc. (AAPL)
+    //match[1] returns AAPL(i.e inside parentheses wala)
+
+    let sym = "";
+    const match = rawInput.match(/\(([A-Za-z0-9.\-^]+)\)\s*$/);
+    if (match) {
+      sym = match[1].toUpperCase();
+    }
+
+    if (!sym && rawInput.length >= 2) {
+      try {
+        const results = await searchTickers(rawInput);
+        if (results.length > 0) {
+          const exactMatch = results.find(
+            (item) => item.symbol.toUpperCase() === compact,
+          );
+          if (exactMatch) {
+            sym = exactMatch.symbol.toUpperCase();
+          } else if (!isTickerLike) {
+            sym = results[0].symbol.toUpperCase();
+          }
+        }
+      } catch {
+        // ignore search failures and validate by raw ticker pattern below
+      }
+    }
+
+    if (!sym && isTickerLike && rawInput.length >= 1) {
+      try {
+        const results = await searchTickers(rawInput);
+        const exactMatch = results.find(
+          (item) => item.symbol.toUpperCase() === compact,
+        );
+        if (exactMatch) {
+          sym = exactMatch.symbol.toUpperCase();
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!sym) {
+      setError("Enter a valid ticker or company name.");
+      setTimeout(() => setError(""), 4500);
+      setIsSubmitting(false);
+      return;
+    }
+
     if (
       isNaN(newStockQuantity) ||
       isNaN(newStockPrice) ||
@@ -73,7 +139,7 @@ function Oneportfolio() {
       setIsSubmitting(false);
       return;
     }
-    if(newStockDate > new Date().toISOString().split("T")[0]){
+    if (newStockDate > new Date().toISOString().split("T")[0]) {
       setError("Buy date cannot be in the future");
       setIsSubmitting(false);
       return;
@@ -92,7 +158,7 @@ function Oneportfolio() {
       body: JSON.stringify({
         //also  we need to send the portfolio id to backend to add the stock to the correct portfolio
         portfolioId: id,
-        symbol: newStockSymbol,
+        symbol: sym,
         quantity: Number(newStockQuantity),
         price: Number(newStockPrice),
         buyDate: newStockDate,
@@ -155,7 +221,7 @@ function Oneportfolio() {
       setError("Quantity and Price must be greater than zero");
       return;
     }
-    if(newStockDate > new Date().toISOString().split("T")[0]){
+    if (newStockDate > new Date().toISOString().split("T")[0]) {
       setError("Buy date cannot be in the future");
       return;
     }
@@ -210,7 +276,9 @@ function Oneportfolio() {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-      setError(result.detail || result.message || "Failed to analyze portfolio");
+      setError(
+        result.detail || result.message || "Failed to analyze portfolio",
+      );
       setAnalysing(false);
       return;
     }
@@ -218,30 +286,24 @@ function Oneportfolio() {
 
     navigate(`/portfolio-analysis/${id}`, {
       state: {
-        analysisData: result.resultData
-      }
+        analysisData: result.resultData,
+      },
     });
   };
   return (
-    <div className="min-h-screen bg-[#0d171b]/95 backdrop-blur-md text-white p-6">
+    <div className="min-h-screen bg-[#0d171b]/95 backdrop-blur-md text-white px-8 py-8 ">
+      <div className="flex items-center justify-between mb-1 mt-2">
+        <button onClick={() => navigate(-1)}>← Back</button>
+        <button onClick={() => setAdding(true)}>+ Add Stock</button>
+      </div>
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
-      <div className="max-w-6xl mx-auto bg-[#0d171b] rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-[#13a3ea]">{Portfolioname}</h1>
-
-          <button
-            onClick={() => setAdding(true)}
-          >
-            + Add Stock
-          </button>
-        </div>
-
+      <div className="max-w-6xl mx-auto bg-[#0d171b] rounded-lg shadow flex flex-col items-center justify-center">
         {getting ? (
-          <div className="text-gray-500">Loading portfolio details...</div>
+          <div className="text-gray-400 text-lg">Loading portfolio details...</div>
         ) : holdings.length === 0 ? (
-          <div className="text-gray-500">No stocks in this portfolio.</div>
+          <div className="text-gray-400 text-lg">No stocks in this portfolio.</div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-700">
+          <div className="w-full overflow-x-auto rounded-lg border border-gray-700 p-4">
             <table className="w-full border border-gray-200 text-left">
               <thead className="bg-gray-100 text-black font-semibold">
                 <tr>
@@ -303,7 +365,7 @@ function Oneportfolio() {
                           onChange={(e) => setNewStockDate(e.target.value)}
                         />
                       ) : (
-                        (stock.buy_date)
+                        stock.buy_date
                       )}
                     </td>
 
@@ -326,15 +388,11 @@ function Oneportfolio() {
                         </div>
                       ) : (
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEditStock(stock._id)}
-                          >
+                          <button onClick={() => handleEditStock(stock._id)}>
                             Edit
                           </button>
 
-                          <button
-                            onClick={() => handleDeleteStock(stock._id)}
-                          >
+                          <button onClick={() => handleDeleteStock(stock._id)}>
                             Delete
                           </button>
                         </div>
@@ -347,7 +405,7 @@ function Oneportfolio() {
             <div>
               <button
                 onClick={handleAnalyzePortfolio}
-                className="mt-4 ml-2.5 mb-4"
+                className="mt-4 ml-0.5 mb-4"
               >
                 Analyze Portfolio{" "}
               </button>
@@ -400,17 +458,9 @@ function Oneportfolio() {
             </div>
 
             <div className="flex gap-3 mt-5">
-              <button
-                onClick={handlenewstock}
-              >
-                Add
-              </button>
+              <button onClick={handlenewstock}>Add</button>
 
-              <button
-                onClick={() => setAdding(false)}
-              >
-                Cancel
-              </button>
+              <button onClick={() => setAdding(false)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -423,4 +473,3 @@ function Oneportfolio() {
 export default Oneportfolio;
 //display if portfolio is there or not and user can also add a new stock symbol to that portfolio and also delete the portfolio
 //we have the user portfolio id and get the portfolio details from backend
-
