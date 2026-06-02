@@ -199,7 +199,8 @@ async def google_signup(request: Request):
 # ---------------- PROTECTED ----------------
 @app.get("/me")
 def me(user: str = Depends(get_current_user)): 
-    return {"email": user}
+    return {"email": user} if user else {}
+#if user is not athenticated then also it should return something 
 
 # ---------------- LOGOUT ----------------
 @app.post("/logout")

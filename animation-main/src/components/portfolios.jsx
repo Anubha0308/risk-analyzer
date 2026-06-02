@@ -29,7 +29,24 @@ function Portfolios() {
 
   const [rename, setRename] = useState("");
   const [renamingId, setRenamingId] = useState(null);
-  const [renaming, setRenaming] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch(`${backend_url}/me`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const isAuthorized = response.ok;
+      setAuthorized(isAuthorized);
+      return isAuthorized;
+    } catch {
+      setAuthorized(false);
+      return false;
+    }
+  };
 
   const getPortFolios = async () => {
     setFetching(true);
@@ -66,12 +83,11 @@ function Portfolios() {
           : [];
 
       setPortfolios(list);
+      setFetching(false);
     } catch {
       setPortfolios([]);
 
       setError("Network error while loading portfolios");
-    } finally {
-      setFetching(false);
     }
   };
 
@@ -108,8 +124,7 @@ function Portfolios() {
     getPortFolios();
   };
 
-  const handleRename = async (portfolioId, currentName) => {
-    setRenaming(true);
+  const handleRename = (portfolioId, currentName) => {
     setRename(currentName);
     setRenamingId(portfolioId);
   };
@@ -133,16 +148,83 @@ function Portfolios() {
       return;
     }
 
-    setRenaming(false);
     setRename("");
     setRenamingId(null);
     getPortFolios();
   };
 
   useEffect(() => {
-    getPortFolios();
+    const init = async () => {
+      const isAuth = await checkAuth();
+      if (isAuth) {
+        getPortFolios();
+      } else {
+        setFetching(false);
+      }
+    };
+    init();
   }, []);
 
+  const Instructions = () => (
+    <div className="max-w-7xl mx-auto mt-20 text-center p-6 rounded-lg bg-[#0d171b] border border-[#4c5f8e]">
+      <h3 className="text-3xl font-bold text-[#0d171b] dark:text-white mb-10">
+        Portfolio Analysis Features:
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
+        {[
+          {
+            title: "Create Your Portfolio",
+            description:
+              "Easily build your investment portfolio by giving unique names to your portfolios.",
+            icon: "add",
+            color: "green",
+          },
+          {
+            title: "Add stocks to Portfolio",
+            description:
+              "Add stocks to your portfolio by searching for stock symbols and selecting the desired stock from the search results.",
+            icon: "show_chart",
+            color: "amber",
+          },
+          {
+            title: "Analyze Portfolio",
+            description:
+              "Analyze your portfolio's performance with detailed insights on total value, profit/loss, risk score and more.",
+            icon: "lightbulb",
+            color: "green",
+          },
+          {
+            title: "See Optimized Portfolio Recommendations",
+            description:
+              "Get personalized portfolio optimization recommendations based on your current holdings and market trends to maximize returns and minimize risks.",
+            icon: "recommend",
+            color: "amber",
+          },
+        ].map((item) => (
+          <div
+            key={item.title}
+            className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className={`flex h-11 w-11 items-center justify-center rounded-xl bg-${item.color}-500/15 text-${item.color}-500`}
+              >
+                <span className="material-symbols-outlined text-2xl">
+                  {item.icon}
+                </span>
+              </div>
+              <h4 className="text-lg font-bold text-[#0d171b] dark:text-white">
+                {item.title}
+              </h4>
+            </div>
+            <p className="text-sm text-[#4c809a] dark:text-slate-400 leading-relaxed">
+              {item.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   return (
     <>
       {adding ? (
@@ -181,27 +263,24 @@ function Portfolios() {
             </div>
           </div>
         </div>
+      ) : !authorized ? (
+        <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
+          <div className="flex items-center justify-between mb-6 mt-2">
+            <button onClick={() => navigate(-1)}>← Back</button>
+          </div>
+          <Instructions />
+        </div>
       ) : (
         <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
           {error && (
             <ErrorDisplay message={error} onClose={() => setError("")} />
           )}
-          {/* Top Header */}
           <div className="flex items-center justify-between mb-1 mt-2">
             <button onClick={() => navigate(-1)}>← Back</button>
             <button onClick={() => setAdding(true)}>+ New Portfolio</button>
           </div>
-          {/* Loading */}
-          {fetching ? (
-            <div className="text-center text-gray-400 mt-20 text-lg">
-              Fetching portfolios...
-            </div>
-          ) : portfolios.length === 0 ? (
-            <div className="text-center text-gray-400 mt-20 text-lg">
-              No portfolios found.
-            </div>
-          ) : (
-            <div className="max-w-6xl mx-auto flex flex-col gap-6">
+
+          <div className="max-w-6xl mx-auto flex flex-col gap-6">
             <div className="mb-4">
               <p className="text-4xl font-bold text-white">My Portfolios</p>
 
@@ -209,60 +288,69 @@ function Portfolios() {
                 Manage and analyze your investment portfolios
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-             
-              {portfolios.map((portfolio) => (
-                <div
-                  key={portfolio._id}
-                  className="bg-[#0d171b] border border-[#4c5f8e] rounded-2xl p-6 cursor-pointer hover:border-[#13a3ea] hover:-translate-y-1 transition-all duration-200 shadow-lg"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      {renamingId === portfolio._id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            className="bg-[#0f1727] border border-[#4c5f8e] p-2 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
-                            placeholder={portfolio.name}
-                            value={rename}
-                            onChange={(e) => setRename(e.target.value)}
+            {fetching ? (
+              <div className="text-white text-center mt-20">
+                Loading portfolios...
+              </div>
+            ) : portfolios.length === 0 ? (
+                <div className="text-white text-center mt-20">
+                  No portfolios found. Create your first portfolio to get started!
+                </div>
+              ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {portfolios.map((portfolio) => (
+                  <div
+                    key={portfolio._id}
+                    className="bg-[#0d171b] border border-[#4c5f8e] rounded-2xl p-6 cursor-pointer hover:border-[#13a3ea] hover:-translate-y-1 transition-all duration-200 shadow-lg"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {renamingId === portfolio._id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              className="bg-[#0f1727] border border-[#4c5f8e] p-2 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
+                              placeholder={portfolio.name}
+                              value={rename}
+                              onChange={(e) => setRename(e.target.value)}
+                            />
+                            <FaCheck
+                              className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
+                              onClick={(e) => handlerenamesave()}
+                            />
+                          </div>
+                        ) : (
+                          <h3 className="text-xl font-bold text-white">
+                            {portfolio.name}
+                          </h3>
+                        )}
+                        <span>
+                          <RenameIcon
+                            className="text-gray-400 mt-2 hover:text-[#13a3ea] transition-all cursor-pointer"
+                            onClick={(e) => {
+                              handleRename(portfolio._id, portfolio.name);
+                            }}
                           />
-                          <FaCheck
-                            className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
-                            onClick={(e) => handlerenamesave()}
-                          />
-                        </div>
-                      ) : (
-                        <h3 className="text-xl font-bold text-white">
-                          {portfolio.name}
-                        </h3>
-                      )}
-                      <span>
-                        <RenameIcon
-                          className="text-gray-400 mt-2 hover:text-[#13a3ea] transition-all cursor-pointer"
-                          onClick={(e) => {
-                            handleRename(portfolio._id, portfolio.name);
-                          }}
-                        />
-                      </span>
-                      <p
-                        className="text-gray-300 text-sm mt-2"
-                        onClick={() =>
-                          navigate(`/Oneportfolio/${portfolio._id}`)
-                        }
-                      >
-                        Click to view portfolio
-                      </p>
-                    </div>
+                        </span>
+                        <p
+                          className="text-gray-300 text-sm mt-2"
+                          onClick={() =>
+                            navigate(`/Oneportfolio/${portfolio._id}`)
+                          }
+                        >
+                          Click to view portfolio
+                        </p>
+                      </div>
 
-                    <div className="w-12 h-12 rounded-full bg-[#13a3ea]/20 flex items-center justify-center text-[#13a3ea] text-xl">
-                      📊
+                      <div className="w-12 h-12 rounded-full bg-[#13a3ea]/20 flex items-center justify-center text-[#13a3ea] text-xl">
+                        📊
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-            </div>
-          )}
+                ))}
+              </div>
+              )
+            }
+          </div>
         </div>
       )}
     </>
