@@ -30,6 +30,7 @@ function Portfolios() {
   const [rename, setRename] = useState("");
   const [renamingId, setRenamingId] = useState(null);
   const [authorized, setAuthorized] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const checkAuth = async () => {
     try {
@@ -277,7 +278,10 @@ function Portfolios() {
           )}
           <div className="flex items-center justify-between mb-1 mt-2">
             <button onClick={() => navigate(-1)}>← Back</button>
+            <div className="flex items-center gap-2">
+            <div className="h-6 w-6 bg-[#13a3ea] rounded-full" onClick={() => setShowInstructions(true)}>?</div> 
             <button onClick={() => setAdding(true)}>+ New Portfolio</button>
+            </div>
           </div>
 
           <div className="max-w-6xl mx-auto flex flex-col gap-6">
@@ -351,6 +355,19 @@ function Portfolios() {
               )
             }
           </div>
+        </div>
+      )}
+      {showInstructions && (
+        
+        <div className="min-h-screen fixed inset-0 bg-transparent backdrop-blur-xs px-8 py-8 flex items-center justify-center z-50">
+          {/* backdrop-blur and whatever is in the background should remain visible but blurred out */}
+          <Instructions />
+          <button
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition-all"
+            onClick={() => setShowInstructions(false)}
+          >
+            Close
+          </button>
         </div>
       )}
     </>
