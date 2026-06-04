@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from utils.feature_engineering import get_features, FEATURES
 from auth_utils import get_current_user
 from database import user_info_collection
+from utils.redis_client import set_cache, get_cache
+from utils.redis_keys import prediction_key
 
 # ---------------- ROUTER ----------------
 router = APIRouter()
@@ -30,6 +32,17 @@ except Exception as e:
     model = None
 
 
+
+# check for prediction in cache if available then it is cache hit else when we have cache miss then do the prediction and set in the cache
+# we have to make sure charts_data is JSON serializable
+
+def get_cached_prediction(key: str):
+    cached_result = get_cache(key)
+    if cached_result is not None:
+        #we need to convert the cached_result back to feasible format
+        return cached_result
+    return None
+        
 # ---------------- PREDICTION ENDPOINT ----------------
 @router.get("/predict/risk/{symbol}")
 def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user is email 
@@ -46,7 +59,13 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
             company_name = info.get("shortName") or info.get("longName") or info.get("displayName")
         except Exception:
             company_name = None
-
+            
+        #check for redis cache here
+        cache_key = prediction_key(symbol.upper())
+        cached_prediction = get_cached_prediction(cache_key)
+        if cached_prediction is not None: 
+            return cached_prediction
+        
         # -------- Fetch features and chart series --------
         features_df, chart_data, price_change_pct, current_price, error_msg = get_features(symbol)
 
@@ -134,7 +153,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
             else "Low risk — hold"
         )
 
-        return {
+        response ={
             "symbol": symbol.upper(),
             "company_name": company_name,
             "risk_score": round(float(risk_score), 3),
@@ -145,6 +164,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
             "charts": chart_data or {},
             "current_price": round(float(current_price), 2) if current_price is not None else None,
         }
+        set_cache(cache_key,response,ttl=1800)
 
     except HTTPException:
         raise

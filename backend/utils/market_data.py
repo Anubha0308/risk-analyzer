@@ -3,6 +3,9 @@ import yfinance as yf
 from database import stock_price_history_collection
 from datetime import timezone,datetime
 
+from utils.redis_client import get_cache, set_cache
+from utils.redis_keys import stock_history_key
+
 
 REQUIRED_COLS = ["Open", "High", "Low", "Close", "Volume"]
 
@@ -133,13 +136,54 @@ def download_price_history(symbol: str, period: str = "6mo"):
     
     return df,None
 
+def get_redis_cached_result(key: str, min_rows: int):
+    redis_cached_data = get_cache(key)
+
+    if not redis_cached_data:
+        return None
+
+    df = pd.DataFrame(redis_cached_data)
+
+    if len(df) < min_rows:
+        return None
+
+    df["date"] = pd.to_datetime(df["date"])#because in redis we by default store in str form
+    df.set_index("date", inplace=True)#make date index
+    df.sort_index(inplace=True)
+
+    return df[REQUIRED_COLS]
+
+
+def set_redis_cache(key: str, df: pd.DataFrame):
+    cache_df = df.copy()
+
+    cache_df = cache_df[REQUIRED_COLS]
+    cache_df = cache_df.reset_index()
+
+    cache_df.rename(columns={"index": "date"}, inplace=True)
+
+    cache_df["date"] = cache_df["date"].astype(str)
+
+    data = cache_df.to_dict(orient="records")#converts rows into list of dictionaries with column namw serving as keys 
+
+    set_cache(key, data, ttl=60 * 60 * 6)
+     
 def get_price_history(symbol: str, period: str = "1y", min_rows=None):
     symbol = symbol.upper()
     
+    #check if present in redis cache first
+    cache_key = stock_history_key(symbol)
+    redis_cached_df = get_redis_cached_result(cache_key, min_rows)
 
+    if redis_cached_df is not None:
+        return redis_cached_df, None
+    
+    
     cached_df = get_cached_price_history(symbol, min_rows=min_rows)
 
     if cached_df is not None and len(cached_df) >= min_rows:
+        #before returning set cache
+        set_redis_cache(cache_key, cached_df)
         return cached_df, None
    
     df, error_msg = download_price_history(symbol, period=period)
@@ -148,7 +192,10 @@ def get_price_history(symbol: str, period: str = "1y", min_rows=None):
         return None, error_msg
 
     save_price_history(symbol, df)
-
+    
+    #cache the stock_history
+    set_redis_cache(cache_key, df)
+    
     return df, None
 
 def get_current_price_info(symbol: str, df: pd.DataFrame):

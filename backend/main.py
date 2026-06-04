@@ -9,6 +9,7 @@ from auth_utils import hash_password, verify_password, get_current_user
 from jwt_utils import create_access_token
 from core.rate_limiter import setup_rate_limiter, limiter
 from core.cooldown_logic import check_locked, record_failure, reset_attempts
+from utils.redis_client import redis_client
 
 from fastapi import Request
 from fastapi.responses import RedirectResponse
@@ -230,3 +231,9 @@ app.include_router(portfolio_router)
 
 from routes.optimize_portfolio import router as optimize_router
 app.include_router(optimize_router)
+
+@app.get("/redis-test")
+def redis_test():
+    redis_client.set("hello", "world")
+    value = redis_client.get("hello")
+    return {"value": value}

@@ -95,7 +95,8 @@ def _prepare_chart_data(df: pd.DataFrame):
 
     if chart_df.empty:
         return None
-
+    
+    #this already is in JSON form i think because goint to frontend for graph plotting
     return {
         "dates": chart_df.index.strftime("%Y-%m-%d").tolist(),
         "price": chart_df["Close"].round(2).tolist(),
