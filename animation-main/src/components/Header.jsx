@@ -34,6 +34,13 @@ const Header = () => (
           >
             About
           </Link>
+          <Link
+            to="/Disclaimer"
+            className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            Model Information
+          </Link>
         </nav>
         <div className="flex items-center gap-3">
           <NotificationBell />

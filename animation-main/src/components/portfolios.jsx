@@ -279,7 +279,7 @@ function Portfolios() {
           <div className="flex items-center justify-between mb-1 mt-2">
             <button onClick={() => navigate(-1)}>← Back</button>
             <div className="flex items-center gap-2">
-            <div className="h-6 w-6 bg-[#13a3ea] rounded-full" onClick={() => setShowInstructions(true)}>?</div> 
+            <div className="h-6 w-6 bg-[#13a3ea] rounded-full text-center" onClick={() => setShowInstructions(true)}>?</div> 
             <button onClick={() => setAdding(true)}>+ New Portfolio</button>
             </div>
           </div>
@@ -305,7 +305,7 @@ function Portfolios() {
                 {portfolios.map((portfolio) => (
                   <div
                     key={portfolio._id}
-                    className="bg-[#0d171b] border border-[#4c5f8e] rounded-2xl p-6 cursor-pointer hover:border-[#13a3ea] hover:-translate-y-1 transition-all duration-200 shadow-lg"
+                    className="bg-[#0d171b] border border-[#4c5f8e] rounded-2xl p-6 cursor-pointer shadow-lg"
                   >
                     <div className="flex items-center justify-between">
                       <div>

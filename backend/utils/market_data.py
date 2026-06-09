@@ -1,13 +1,16 @@
 import pandas as pd
 import yfinance as yf
+import math
+import numpy as np
 from database import stock_price_history_collection
-from datetime import timezone,datetime
+from datetime import timezone,datetime, timedelta
 
 from utils.redis_client import get_cache, set_cache
 from utils.redis_keys import stock_history_key
 
 
 REQUIRED_COLS = ["Open", "High", "Low", "Close", "Volume"]
+
 
 def save_price_history(symbol: str, df: pd.DataFrame):
     symbol = symbol.upper()
@@ -61,19 +64,21 @@ def mongo_docs_to_dataframe(docs):
 
 def get_cached_price_history(symbol: str, min_rows: int = 50):
     docs = list(
-        stock_price_history_collection.find(
-            {"symbol": symbol.upper()},
-            {
-                "_id": 0,
-                "date": 1,
-                "open": 1,
-                "high": 1,
-                "low": 1,
-                "close": 1,
-                "volume": 1,
-            }
-        ).sort("date", 1)
+    stock_price_history_collection.find(
+        {"symbol": symbol.upper()},
+        {
+            "_id": 0,
+            "date": 1,
+            "open": 1,
+            "high": 1,
+            "low": 1,
+            "close": 1,
+            "volume": 1,
+        }
+        ).sort("date", -1).limit(252)
     )
+
+    docs.reverse()
 
     if len(docs) < min_rows:
         return None
@@ -136,66 +141,110 @@ def download_price_history(symbol: str, period: str = "6mo"):
     
     return df,None
 
+
+def refresh_latest_candle(symbol: str):
+    try:
+        latest_df = yf.Ticker(symbol).history(period="5d")
+
+        if latest_df is None or latest_df.empty:
+            return
+
+        latest_df = latest_df.tail(1)
+
+        save_price_history(symbol, latest_df)
+
+    except Exception as e:
+        print(f"Failed to refresh {symbol}: {e}")
+        
+    
 def get_redis_cached_result(key: str, min_rows: int):
-    redis_cached_data = get_cache(key)
+    try:
+        redis_cached_data = get_cache(key)
 
-    if not redis_cached_data:
+        if not redis_cached_data:
+            return None
+
+        df = pd.DataFrame(redis_cached_data)
+
+        if len(df) < min_rows:
+            return None
+
+        df["date"] = pd.to_datetime(df["date"])
+        df.set_index("date", inplace=True)
+        df.sort_index(inplace=True)
+
+        return df[REQUIRED_COLS]
+
+    except Exception as e:
         return None
-
-    df = pd.DataFrame(redis_cached_data)
-
-    if len(df) < min_rows:
-        return None
-
-    df["date"] = pd.to_datetime(df["date"])#because in redis we by default store in str form
-    df.set_index("date", inplace=True)#make date index
-    df.sort_index(inplace=True)
-
-    return df[REQUIRED_COLS]
 
 
 def set_redis_cache(key: str, df: pd.DataFrame):
-    cache_df = df.copy()
+    try:
+        cache_df = df.copy()
+        cache_df = cache_df.tail(252)
+        cache_df = cache_df[REQUIRED_COLS]
+        cache_df = cache_df.reset_index()
 
-    cache_df = cache_df[REQUIRED_COLS]
-    cache_df = cache_df.reset_index()
+        if "Date" in cache_df.columns:
+            cache_df.rename(columns={"Date": "date"}, inplace=True)
+        elif "Datetime" in cache_df.columns:
+            cache_df.rename(columns={"Datetime": "date"}, inplace=True)
+        elif "index" in cache_df.columns:
+            cache_df.rename(columns={"index": "date"}, inplace=True)
 
-    cache_df.rename(columns={"index": "date"}, inplace=True)
+        if "date" not in cache_df.columns:
+            return
 
-    cache_df["date"] = cache_df["date"].astype(str)
+        cache_df["date"] = pd.to_datetime(cache_df["date"]).dt.strftime("%Y-%m-%d")
 
-    data = cache_df.to_dict(orient="records")#converts rows into list of dictionaries with column namw serving as keys 
+        data = cache_df.to_dict(orient="records")
+        set_cache(key, data, ttl=60 * 60 * 6)
 
-    set_cache(key, data, ttl=60 * 60 * 6)
+    except Exception as e:
+        return
+    
+def is_price_history_fresh(df, max_stale_days=3):
+    if df is None or df.empty:
+        return False
+
+    latest_date = df.index[-1].date()
+    today = datetime.now(timezone.utc).date()
+
+    return latest_date >= today - timedelta(days=max_stale_days)    
      
-def get_price_history(symbol: str, period: str = "1y", min_rows=None):
+def get_price_history(symbol: str, period: str = "1y", min_rows=50):
     symbol = symbol.upper()
-    
-    #check if present in redis cache first
     cache_key = stock_history_key(symbol)
+
+    
     redis_cached_df = get_redis_cached_result(cache_key, min_rows)
-
-    if redis_cached_df is not None:
+    if redis_cached_df is not None and is_price_history_fresh(redis_cached_df):
         return redis_cached_df, None
-    
-    
-    cached_df = get_cached_price_history(symbol, min_rows=min_rows)
 
+    cached_df = get_cached_price_history(symbol, min_rows=min_rows)
     if cached_df is not None and len(cached_df) >= min_rows:
-        #before returning set cache
+
+        refresh_latest_candle(symbol)
+
+        cached_df = get_cached_price_history(
+            symbol,
+            min_rows=min_rows
+        )
+
         set_redis_cache(cache_key, cached_df)
+
         return cached_df, None
-   
+
     df, error_msg = download_price_history(symbol, period=period)
 
     if df is None:
         return None, error_msg
 
+    
     save_price_history(symbol, df)
-    
-    #cache the stock_history
     set_redis_cache(cache_key, df)
-    
+
     return df, None
 
 def get_current_price_info(symbol: str, df: pd.DataFrame):

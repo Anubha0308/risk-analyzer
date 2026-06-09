@@ -6,13 +6,16 @@ import NotificationBell from "./notificationBell.jsx";
 
 // Helper function to fetch risk data
 const fetchRiskData = async (symbol) => {
-  const response = await fetch(`${backend_url}/predict/risk/${encodeURIComponent(symbol)}`, {
-    method: "GET",
-    credentials: "include", // Important for cookies/auth
-    headers: {
-      Accept: "application/json",
+  const response = await fetch(
+    `${backend_url}/predict/risk/${encodeURIComponent(symbol)}`,
+    {
+      method: "GET",
+      credentials: "include", // Important for cookies/auth
+      headers: {
+        Accept: "application/json",
+      },
     },
-  });
+  );
   if (!response.ok) {
     const errorData = await response
       .json()
@@ -25,7 +28,7 @@ const fetchRiskData = async (symbol) => {
 const searchTickers = async (query) => {
   const res = await fetch(
     `${backend_url}/market/search?q=${encodeURIComponent(query)}&limit=6`,
-    { headers: { Accept: "application/json" } }
+    { headers: { Accept: "application/json" } },
   );
   if (!res.ok) throw new Error("Failed to search tickers");
   const data = await res.json();
@@ -64,11 +67,16 @@ const Header = ({ onProfileClick, onNotificationsClick }) => (
           >
             About
           </a>
+          <a
+            href="/Disclaimer"
+            className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white"
+            style={{ fontFamily: "Manrope, sans-serif" }}
+          >
+            Model Information
+          </a>
         </nav>
         <div className="flex items-center gap-3">
-          <NotificationBell 
-          onClick={onNotificationsClick}
-          />
+          <NotificationBell onClick={onNotificationsClick} />
           <button
             onClick={onProfileClick}
             className="flex items-center justify-center rounded-lg bg-[#0d171b] dark:bg-slate-800 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
@@ -176,8 +184,8 @@ const StockRiskCard = ({ symbol, name }) => {
                 riskColor === "red"
                   ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-600/20"
                   : riskColor === "amber"
-                  ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 ring-amber-600/20"
-                  : "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 ring-green-600/20"
+                    ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 ring-amber-600/20"
+                    : "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 ring-green-600/20"
               }`}
             >
               {getRiskLabel(data.risk)}
@@ -237,12 +245,16 @@ function Home() {
     }
 
     if (!sym) {
-      setError("Enter a valid ticker (e.g. AAPL) or choose a company from suggestions.");
+      setError(
+        "Enter a valid ticker (e.g. AAPL) or choose a company from suggestions.",
+      );
       setTimeout(() => setError(""), 4500);
       return;
     }
 
-    navigate("/selladvice", { state: { symbol: sym, name: displayName || undefined } });
+    navigate("/selladvice", {
+      state: { symbol: sym, name: displayName || undefined },
+    });
   };
 
   useEffect(() => {
@@ -345,7 +357,10 @@ function Home() {
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
-      <Header onProfileClick={handleprofileClick} onNotificationsClick={handlenotificationsClick} />
+      <Header
+        onProfileClick={handleprofileClick}
+        onNotificationsClick={handlenotificationsClick}
+      />
       <main className="grow">
         {/* Hero Section */}
         <section className="relative overflow-visible pt-12 pb-16 lg:pt-20 lg:pb-24">
@@ -398,7 +413,9 @@ function Home() {
                     placeholder="Search company or ticker (e.g. Apple or AAPL)"
                     className="block w-full rounded-xl border-0 py-4 pl-11 pr-32 text-[#0d171b] shadow-lg shadow-slate-200/50 ring-1 ring-inset ring-[#cfdfe7] placeholder:text-[#4c809a] focus:ring-2 focus:ring-inset focus:ring-[#13a4ec] bg-white dark:bg-slate-800/50 dark:text-white dark:ring-slate-600 sm:text-sm sm:leading-6 transition-all"
                     style={{ fontFamily: "Manrope, sans-serif" }}
-                    onFocus={() => suggestions.length > 0 && setSuggestOpen(true)}
+                    onFocus={() =>
+                      suggestions.length > 0 && setSuggestOpen(true)
+                    }
                     onBlur={() => setTimeout(() => setSuggestOpen(false), 150)}
                   />
                   {suggestOpen && (
@@ -424,7 +441,9 @@ function Home() {
                               setSelectedName(sug.name);
                               setSymbol(`${sug.name} (${sug.symbol})`);
                               setSuggestOpen(false);
-                              navigate("/selladvice", { state: { symbol: sug.symbol, name: sug.name } });
+                              navigate("/selladvice", {
+                                state: { symbol: sug.symbol, name: sug.name },
+                              });
                             }}
                           >
                             <div className="min-w-0">
@@ -435,7 +454,9 @@ function Home() {
                                 {sug.exchange}
                               </div>
                             </div>
-                            <div className="text-xs font-bold text-[#13a4ec] shrink-0">{sug.symbol}</div>
+                            <div className="text-xs font-bold text-[#13a4ec] shrink-0">
+                              {sug.symbol}
+                            </div>
                           </button>
                         ))
                       )}

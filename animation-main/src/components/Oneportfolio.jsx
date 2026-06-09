@@ -416,7 +416,7 @@ function Oneportfolio() {
 
       {adding && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-[#0d171b] p-6 rounded-lg shadow-lg w-80">
+          <div className="bg-[#0d171b] p-6 rounded-lg border border-gray-200 shadow-lg w-80">
             <h2 className="text-xl font-bold mb-4 text-white">
               Add Stock to Portfolio
             </h2>

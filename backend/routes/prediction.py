@@ -3,6 +3,8 @@ import traceback
 import joblib
 import os
 import yfinance as yf
+import math
+import numpy as np
 
 from datetime import datetime, timezone
 from utils.feature_engineering import get_features, FEATURES
@@ -35,6 +37,26 @@ except Exception as e:
 
 # check for prediction in cache if available then it is cache hit else when we have cache miss then do the prediction and set in the cache
 # we have to make sure charts_data is JSON serializable
+def clean_json_value(value):
+    if value is None:
+        return None
+
+    if isinstance(value, (float, np.floating)):
+        value = float(value)
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return value
+
+    if isinstance(value, (int, np.integer)):
+        return int(value)
+
+    if isinstance(value, dict):
+        return {k: clean_json_value(v) for k, v in value.items()}
+
+    if isinstance(value, list):
+        return [clean_json_value(v) for v in value]
+
+    return value
 
 def get_cached_prediction(key: str):
     cached_result = get_cache(key)
@@ -63,8 +85,26 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
         #check for redis cache here
         cache_key = prediction_key(symbol.upper())
         cached_prediction = get_cached_prediction(cache_key)
-        if cached_prediction is not None: 
-            return cached_prediction
+        if cached_prediction is not None:
+            user_info_collection.update_one(
+                {"email": user},
+                {"$pull": {"recently_viewed": symbol}}
+            )
+
+            # 2. Push to front & limit to 6
+            user_info_collection.update_one(
+                {"email": user},
+                {
+                    "$push": {
+                        "recently_viewed": {
+                            "$each": [symbol],
+                            "$position": 0,
+                            "$slice": 6
+                        }
+                    }
+                }
+            )
+            return clean_json_value(cached_prediction)
         
         # -------- Fetch features and chart series --------
         features_df, chart_data, price_change_pct, current_price, error_msg = get_features(symbol)
@@ -164,7 +204,9 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
             "charts": chart_data or {},
             "current_price": round(float(current_price), 2) if current_price is not None else None,
         }
-        set_cache(cache_key,response,ttl=1800)
+        response = clean_json_value(response)
+        set_cache(cache_key, response, ttl=60 * 30)
+        return response
 
     except HTTPException:
         raise

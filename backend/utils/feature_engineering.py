@@ -43,14 +43,13 @@ def build_features(df: pd.DataFrame) -> pd.Series:
         # Fallback if MACD calculation fails or column name differs
         df["macd"] = np.nan
     
-    df["volatility"] = df["Close"].pct_change().rolling(10).std()
+    df["volatility"] = df["Close"].pct_change(fill_method=None).rolling(10).std()
+
     df["sma_20"] = ta.sma(df["Close"], length=20)
     df["sma_50"] = ta.sma(df["Close"], length=50)
 
-    # Returns
-    df["return_5d"] = df["Close"].pct_change(5)
-    df["return_20d"] = df["Close"].pct_change(20)
-
+    df["return_5d"] = df["Close"].pct_change(5, fill_method=None)
+    df["return_20d"] = df["Close"].pct_change(20, fill_method=None)
     # Drop incomplete rows (but keep track of original length)
     original_len = len(df)
     df.dropna(inplace=True)
@@ -85,7 +84,7 @@ def _prepare_chart_data(df: pd.DataFrame):
     # Indicators needed for the frontend graphs
     chart_df["sma_20"] = ta.sma(chart_df["Close"], length=20)
     chart_df["sma_50"] = ta.sma(chart_df["Close"], length=50)
-    chart_df["volatility"] = chart_df["Close"].pct_change().rolling(10).std()
+    chart_df["volatility"] = chart_df["Close"].pct_change(fill_method= None).rolling(10).std()
 
     # Remove rows that still have NaNs after indicator calculation
     chart_df.dropna(subset=["Close", "sma_20", "sma_50", "volatility"], inplace=True)
