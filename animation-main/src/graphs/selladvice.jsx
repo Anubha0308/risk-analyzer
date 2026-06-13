@@ -5,6 +5,8 @@ import ErrorDisplay from "../components/ErrorDisplay.jsx";
 import RiskGauge from "./riskgauge.jsx";
 import PriceGraph from "./pricegraph.jsx";
 import VolatilityChart from "./volatility.jsx";
+import { GoArrowDown } from "react-icons/go";
+import { GoArrowUp } from "react-icons/go";
 
 const searchTickers = async (query) => {
   const res = await fetch(
@@ -384,7 +386,11 @@ function SellAdvice() {
                         <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Current Price</div>
                         <div className="text-4xl font-bold text-[#0d171b] dark:text-white">${prediction.current_price}</div>
                         <div className="text-xs text-[#4c809a] dark:text-slate-400 mb-1">Price Change</div>
-                        <div className="text-2xl font-bold text-[#0d171b] dark:text-white">${prediction.price_change}</div>
+                        {(prediction.price_change>0)?(
+                        <div className="text-xl font-bold text-green-600">{prediction.price_change}</div>):
+                        (<div className="text-xl font-bold text-red-600">{prediction.price_change}</div>)
+                        }
+                          
                       </div>
                     </div>
 

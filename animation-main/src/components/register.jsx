@@ -9,6 +9,8 @@ function Register() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+
   const navigate = useNavigate();
 
   // Email validation
@@ -16,18 +18,30 @@ function Register() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
-
+  
   // Password validation (at least 8 characters)
-  const validatePassword = (password) => {
-    const validationRules = {
-    length: password.length >= 8,
-    lowercase: /[a-z]/.test(password),
-    uppercase: /[A-Z]/.test(password),
-    number: /[0-9]/.test(password),
-    specialChar: /[^A-Za-z0-9]/.test(password),
+  const atLeastOneUppercase = /[A-Z]/g; // capital letters from A to Z
+  const atLeastOneLowercase = /[a-z]/g; // small letters from a to z
+  const atLeastOneNumeric = /[0-9]/g; // numbers from 0 to 9
+  const atLeastOneSpecialChar = /[#?!@$%^&*-]/g; // any of the special characters within the square brackets
+  const eightCharsOrMore = /.{8,}/g; // eight characters or more
+
+  const getPasswordTracker = (value) => ({
+    uppercase: value.match(atLeastOneUppercase),
+    lowercase: value.match(atLeastOneLowercase),
+    number: value.match(atLeastOneNumeric),
+    specialChar: value.match(atLeastOneSpecialChar),
+    eightCharsOrGreater: value.match(eightCharsOrMore),
+  });
+
+  const validatePassword = (value) => {
+    const tracker = getPasswordTracker(value);
+    const strength = Object.values(tracker).filter(Boolean).length;
+    setPasswordStrength(strength);
+    return strength === 5;
   };
-    return Object.values(validationRules).every(Boolean);
-  };
+
+  const passwordTracker = getPasswordTracker(password);
 
   const handleGoogleLogin = () => {
     // OAuth flow requires browser redirect, not fetch
@@ -51,10 +65,6 @@ function Register() {
     // Validate password
     if (!password) {
       setError("Password is required");
-      return;
-    }
-    if (!validatePassword(password)) {
-      setError("Password must be at least 6 characters long");
       return;
     }
 
@@ -175,7 +185,11 @@ function Register() {
                   id="password"
                   name="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPassword(value);
+                    validatePassword(value);
+                  }}
                   className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0d171b] focus:outline-0 focus:ring-2 focus:ring-[#13a4ec]/20 border border-[#cfdfe7] bg-slate-50 focus:border-[#13a4ec] h-12 placeholder:text-[#4c809a] px-[15px] pr-12 text-base font-normal leading-normal transition-all"
                   placeholder="••••••••"
                   required
@@ -189,17 +203,20 @@ function Register() {
                   </span>
                 </div>
               </div>
+              {password && (
+                <div>
+                  <div className="text-red-700 text-xs">
+                    {passwordStrength < 5 && "Must contain "}
+                    {!passwordTracker.uppercase && "uppercase, "}
+                    {!passwordTracker.lowercase && "lowercase, "}
+                    {!passwordTracker.specialChar && "special character, "}
+                    {!passwordTracker.number && "number, "}
+                    {!passwordTracker.eightCharsOrGreater &&
+                      "eight characters or more"}
+                  </div>
+                </div>
+              )}
             </label>
-
-            {/* Forgot Password Link */}
-            <div className="flex justify-end -mt-1">
-              <a
-                href="#"
-                className="text-[#13a4ec] hover:text-[#0f8ac4] text-sm font-semibold transition-colors"
-              >
-                Forgot password?
-              </a>
-            </div>
 
             {/* Primary Action */}
             <button

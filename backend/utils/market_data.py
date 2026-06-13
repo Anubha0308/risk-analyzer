@@ -142,14 +142,13 @@ def download_price_history(symbol: str, period: str = "6mo"):
     return df,None
 
 
-def refresh_latest_candle(symbol: str):
+def refresh_latest_candle(symbol: str, period: str = "5d"):
     try:
-        latest_df = yf.Ticker(symbol).history(period="5d")
+        latest_df = yf.Ticker(symbol).history(period=period)
 
         if latest_df is None or latest_df.empty:
             return
 
-        latest_df = latest_df.tail(1)
 
         save_price_history(symbol, latest_df)
 
@@ -208,10 +207,15 @@ def is_price_history_fresh(df, max_stale_days=3):
     if df is None or df.empty:
         return False
 
-    latest_date = df.index[-1].date()
     today = datetime.now(timezone.utc).date()
+    latest_trading_date = df.index[-1].date()
+    days_stale = (today - latest_trading_date).days
 
-    return latest_date >= today - timedelta(days=max_stale_days)    
+   
+    if today.weekday() in [0, 1]:  
+        max_stale_days += 2 
+
+    return days_stale <= max_stale_days   
      
 def get_price_history(symbol: str, period: str = "1y", min_rows=50):
     symbol = symbol.upper()
@@ -219,13 +223,13 @@ def get_price_history(symbol: str, period: str = "1y", min_rows=50):
 
     
     redis_cached_df = get_redis_cached_result(cache_key, min_rows)
-    if redis_cached_df is not None and is_price_history_fresh(redis_cached_df):
+    if redis_cached_df is not None and is_price_history_fresh(redis_cached_df, max_stale_days=1):
         return redis_cached_df, None
 
     cached_df = get_cached_price_history(symbol, min_rows=min_rows)
-    if cached_df is not None and len(cached_df) >= min_rows:
+    if cached_df is not None and len(cached_df) >= min_rows and is_price_history_fresh(cached_df, max_stale_days=3):
 
-        refresh_latest_candle(symbol)
+        refresh_latest_candle(symbol, period="5d")
 
         cached_df = get_cached_price_history(
             symbol,

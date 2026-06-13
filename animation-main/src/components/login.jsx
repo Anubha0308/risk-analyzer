@@ -186,16 +186,6 @@ function Login() {
               </div>
             </label>
 
-            {/* Forgot Password Link */}
-            <div className="flex justify-end -mt-1">
-              <a
-                href="#"
-                className="text-[#13a4ec] hover:text-[#0f8ac4] text-sm font-semibold transition-colors"
-              >
-                Forgot password?
-              </a>
-            </div>
-
             {/* Primary Action */}
             <button
               type="submit"

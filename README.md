@@ -41,6 +41,7 @@ RiskAI is a web application that leverages advanced machine learning algorithms 
     ```bash
     cd backend
     <enter the virtual environment>
+    ".\venv\Scripts\Activate"
     pip install -r requirements.txt
     uvicorn main:app --reload
     (test your backend using FastAPI/SwaggerUI on the port you have entered for running the backend)
@@ -64,12 +65,12 @@ RiskAI is a web application that leverages advanced machine learning algorithms 
 │   │   └── ...
 │   ├── package.json
 │   └── vite.config.js
-├── backend/                # Backend Flask application
+├── backend/                # Backend FastAPI application
 │   ├── auth/
 │   ├── model/
 │   ├── routes/
 │   ├── utils/
-│   ├── main.py             # Flask app entry point
+│   ├── main.py             # App entry point
 │   └── requirements.txt
 └── README.md
 ```
