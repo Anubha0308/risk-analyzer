@@ -237,3 +237,6 @@ def redis_test():
     redis_client.set("hello", "world")
     value = redis_client.get("hello")
     return {"value": value}
+
+from routes.intraday import router as intraday_router
+app.include_router(intraday_router)
