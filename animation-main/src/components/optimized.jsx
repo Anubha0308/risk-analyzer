@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom"
 import { backend_url } from "../config";
@@ -11,7 +11,7 @@ function OptimizePortfolio() {
     const [holdings, setHoldings] = useState([]);
     const navigate = useNavigate();
 
-    const handleOptimize = async () => {
+    const handleOptimize = useCallback(async () => {
         try {
             const response = await fetch(`${backend_url}/optimize_portfolio/${id}`, {
                 method: "GET",
@@ -39,13 +39,13 @@ function OptimizePortfolio() {
         } finally {
             setGetting(false);
         }
-    };
+    },[id]);
 
     useEffect(() => {
         setGetting(true);
         setError("");
         handleOptimize();
-    }, [id]);
+    }, [handleOptimize]);//what is wrong here 
 
     return (
         <div className="min-h-screen bg-[#0d171b]/95 backdrop-blur-md text-white p-6">

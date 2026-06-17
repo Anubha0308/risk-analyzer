@@ -148,8 +148,6 @@ def get_features(symbol: str):
         current_price, prev_close, price_change_pct = get_current_price_info(symbol, df)
 
         chart_data = _prepare_chart_data(df.copy())
-        intraday_data = _prepare_intraday_data();
-
         feature_row = build_features(df.copy())
 
         if feature_row is None:

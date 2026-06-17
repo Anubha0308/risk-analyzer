@@ -115,7 +115,7 @@ function Profile() {
         const errData = await response.json().catch(() => ({}));
         setError(errData.detail || "Failed to load profile");
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please check if the server is running.");
     } finally {
       setLoading(false);
@@ -174,16 +174,13 @@ function Profile() {
         const errData = await response.json().catch(() => ({}));
         setError(errData.detail || "Failed to save changes");
       }
-    } catch (err) {
+    } catch  {
       setError("Network error. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleportfolio = async () => {
-    navigate("/portfolios");
-  };
 
   const handleLogout = async () => {
     try {

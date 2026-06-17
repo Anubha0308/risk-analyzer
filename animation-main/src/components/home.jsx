@@ -1,8 +1,21 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
-import NotificationBell from "./notificationBell.jsx";
+import Header from "./Header.jsx";
+
+const famousStocks = [
+    { symbol: "AAPL", name: "Apple Inc." },
+    { symbol: "TSLA", name: "Tesla Inc." },
+    { symbol: "MSFT", name: "Microsoft Corp." },
+    { symbol: "NVDA", name: "NVIDIA Corp." },
+    { symbol: "AMZN", name: "Amazon.com, Inc." },
+    { symbol: "GOOGL", name: "Alphabet Inc." },
+    { symbol: "META", name: "Meta Platforms Inc." },
+    { symbol: "JPM", name: "JPMorgan Chase & Co." },
+    { symbol: "V", name: "Visa Inc." },
+    { symbol: "JNJ", name: "Johnson & Johnson" },
+  ];
 
 // Helper function to fetch risk data
 const fetchRiskData = async (symbol) => {
@@ -35,89 +48,6 @@ const searchTickers = async (query) => {
   return Array.isArray(data?.quotes) ? data.quotes : [];
 };
 
-const Header = ({ onProfileClick, onNotificationsClick }) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const navLinks = [
-    //this is a list of key-value pairs
-    { href: "/market-overview", label: "Market Overview" },
-    { href: "/about", label: "About" },
-    { href: "/Disclaimer", label: "Model Information" },
-  ];
-
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d171b]/95 backdrop-blur-md">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#13a4ec]/10 text-[#13a4ec] ring-1 ring-[#13a4ec]/20">
-              <span className="material-symbols-outlined text-xl">
-                candlestick_chart
-              </span>
-            </div>
-            <span
-              className="text-xl font-bold tracking-tight text-[#0d171b] dark:text-white"
-              style={{ fontFamily: "Manrope, sans-serif" }}
-            >
-              RiskAI
-            </span>
-          </div>
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm font-semibold text-[#4c809a] hover:text-[#13a4ec] transition-colors dark:text-slate-300 dark:hover:text-white"
-                style={{ fontFamily: "Manrope, sans-serif" }}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-3">
-            <NotificationBell onClick={onNotificationsClick} />
-            <button
-              type="button"
-              onClick={() => setMobileOpen((prev) => !prev)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#0d171b] shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors md:hidden"
-              aria-label={
-                mobileOpen ? "Close navigation menu" : "Open navigation menu"
-              }
-            >
-              <span className="material-symbols-outlined text-lg">menu</span>
-            </button>
-            <button
-              onClick={onProfileClick}
-              className="hidden md:flex items-center justify-center rounded-lg bg-[#0d171b] dark:bg-slate-800 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
-              style={{ fontFamily: "Manrope, sans-serif" }}
-            >
-              Profile
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {mobileOpen && (
-        <div className="md:hidden absolute inset-x-0 top-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d171b] z-50">
-          <div className="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8 z-50">
-            <div className="space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-xl px-4 py-3 text-sm font-semibold text-[#0d171b] transition-colors hover:bg-slate-100 dark:text-white dark:hover:bg-slate-900"
-                  style={{ fontFamily: "Manrope, sans-serif" }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </header>
-  );
-};
 
 const StockRiskCard = ({ symbol, name }) => {
   const [data, setData] = useState(null);
@@ -337,7 +267,7 @@ function Home() {
           setTimeout(() => setError(""), 3000);
         }
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please check if the server is running.");
       setTimeout(() => setError(""), 3000);
     }
@@ -360,7 +290,7 @@ function Home() {
           setTimeout(() => setError(""), 3000);
         }
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please check if the server is running.");
       setTimeout(() => setError(""), 3000);
     }
@@ -369,30 +299,19 @@ function Home() {
   const handleIntraday = async () => {
     try {
       navigate(`/intraday/${intraSymbol}`);
-    } catch (err) {
+    } catch  {
       setError("Problem fetching intraday prices");
       setTimeout(() => setError(""), 3000);
     }
   };
 
-  const famousStocks = [
-    { symbol: "AAPL", name: "Apple Inc." },
-    { symbol: "TSLA", name: "Tesla Inc." },
-    { symbol: "MSFT", name: "Microsoft Corp." },
-    { symbol: "NVDA", name: "NVIDIA Corp." },
-    { symbol: "AMZN", name: "Amazon.com, Inc." },
-    { symbol: "GOOGL", name: "Alphabet Inc." },
-    { symbol: "META", name: "Meta Platforms Inc." },
-    { symbol: "JPM", name: "JPMorgan Chase & Co." },
-    { symbol: "V", name: "Visa Inc." },
-    { symbol: "JNJ", name: "Johnson & Johnson" },
-  ];
+  
 
-  const famousCards = useMemo(() => famousStocks, []);
+  const famousCards = famousStocks;
 
   return (
     <div
-      className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen flex flex-col overflow-x-hidden antialiased"
+      className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen flex flex-col"
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
@@ -408,7 +327,7 @@ function Home() {
             className="absolute inset-x-0 top-0 -z-10 transform-gpu overflow-hidden blur-3xl"
           >
             <div
-              className="relative left-[calc(50%-11rem)] aspect-1155/678 w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#13a4ec]/20 to-blue-600/20 opacity-40 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
+              className="relative left-[calc(50%-11rem)] aspect-1155/678 w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-linear-to-tr from-[#13a4ec]/20 to-blue-600/20 opacity-40 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
               style={{
                 clipPath:
                   "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",

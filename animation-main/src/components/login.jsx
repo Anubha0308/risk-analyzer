@@ -81,7 +81,7 @@ function Login() {
           setError(data.detail || "Login failed. Please try again.");
         }
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please check if the server is running.");
     } finally {
       setIsSubmitting(false);

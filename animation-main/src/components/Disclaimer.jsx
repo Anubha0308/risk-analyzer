@@ -1,15 +1,74 @@
 import React from "react";
+import { useState } from "react";
 import Header from "./Header";
+import ErrorDisplay from "./ErrorDisplay";
+import { backend_url } from "../config";
+import { useNavigate } from "react-router-dom";
 
 function Disclaimer() {
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleprofileClick = async () => {
+      try {
+        const response = await fetch(`${backend_url}/profile`, {
+          method: "GET",
+          credentials: "include", // Important for cookies
+        });
+        if (response.ok) {
+          //if user logged in
+          navigate("/profile");
+        } else {
+          // Handle error from backend
+          if (response.status === 401 || response.status === 404) {
+            setError("login to access profile");
+            // Clear error after 3 seconds
+            setTimeout(() => setError(""), 3000);
+          }
+        }
+      } catch {
+        setError("Network error. Please check if the server is running.");
+        setTimeout(() => setError(""), 3000);
+      }
+    };
+  
+    const handlenotificationsClick = async () => {
+      try {
+        const response = await fetch(`${backend_url}/notifications`, {
+          method: "GET",
+          credentials: "include", // Important for cookies
+        });
+        if (response.ok) {
+          //if user logged in
+          navigate("/notifications");
+        } else {
+          // Handle error from backend
+          if (response.status === 401 || response.status === 404) {
+            setError("login to access notifications");
+            // Clear error after 3 seconds
+            setTimeout(() => setError(""), 3000);
+          }
+        }
+      } catch {
+        setError("Network error. Please check if the server is running.");
+        setTimeout(() => setError(""), 3000);
+      }
+    };
+  
+
   return (
     <div
       className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen flex flex-col"
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
-      <Header />
+      {error && <ErrorDisplay message={error} onClose={() => setError(null)} />}
+      
+      <Header
+        onProfileClick={handleprofileClick}
+        onNotificationsClick={handlenotificationsClick}
+      />
       <main className="grow">
-        <div className="max-w-7xl mx-auto mt-20 text-center p-6 rounded-lg bg-[#0d171b] border border-[#4c5f8e]">
+        <div className="max-w-7xl mx-auto mt-10 mb-10 text-center p-6 rounded-lg bg-[#0d171b] border border-[#4c5f8e]">
           <h3 className="text-3xl font-bold text-[#0d171b] dark:text-white mb-10">
             Portfolio Analysis Features:
           </h3>

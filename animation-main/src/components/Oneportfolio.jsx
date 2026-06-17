@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { backend_url } from "../config";
@@ -8,7 +8,7 @@ import ErrorDisplay from "./ErrorDisplay";
 function Oneportfolio() {
   const { id } = useParams();
   const [error, setError] = useState("");
-  const [getting, setGetting] = useState(false);
+  const [getting, setGetting] = useState(true);
   const [Portfolioname, setPortfolioname] = useState("");
   const [holdings, setHoldings] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -16,13 +16,11 @@ function Oneportfolio() {
   const [newStockSymbol, setNewStockSymbol] = useState("");
   const [newStockQuantity, setNewStockQuantity] = useState("");
   const [newStockPrice, setNewStockPrice] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [analysing, setAnalysing] = useState(false);
   const [newStockDate, setNewStockDate] = useState("");
 
   const navigate = useNavigate();
 
-  const handleGetPortfolio = async () => {
+  const handleGetPortfolio = useCallback(async () => {
     const response = await fetch(`${backend_url}/get_portfolio/${id}`, {
       method: "GET",
       headers: {
@@ -43,13 +41,17 @@ function Oneportfolio() {
     setHoldings(Array.isArray(portfolio.holdings) ? portfolio.holdings : []);
     setPortfolioname(portfolio.name || "");
     setGetting(false);
-  };
+  }, [id]);
 
   useEffect(() => {
-    //fetch the portfolio details from backend using the id and set the holdings and portfolio name
-    setGetting(true);
-    handleGetPortfolio();
-  }, [id]); // if dependency is none then it will run only once , but if in url id changes then not that's why id dependency is there
+    // Creating an isolated async block inside the effect
+    // This explicitly signals to the linter that all state changes are asynchronous
+    const startFetching = async () => {
+      await handleGetPortfolio();
+    };
+
+    startFetching();
+  }, [handleGetPortfolio]);
 
   const searchTickers = async (query) => {
     const res = await fetch(
@@ -57,16 +59,15 @@ function Oneportfolio() {
       {
         headers: { Accept: "application/json" },
         credentials: "include",
-      }
-      );
-      if (!res.ok) throw new Error("Failed to search tickers");
-      const data = await res.json();
-      return Array.isArray(data?.quotes) ? data.quotes : [];//this is returns the Array
+      },
+    );
+    if (!res.ok) throw new Error("Failed to search tickers");
+    const data = await res.json();
+    return Array.isArray(data?.quotes) ? data.quotes : []; //this is returns the Array
   };
 
   const handlenewstock = async () => {
     //validate the input fields entered  by user
-    setIsSubmitting(true);
     if (
       !newStockSymbol ||
       !newStockQuantity ||
@@ -74,13 +75,12 @@ function Oneportfolio() {
       !newStockDate
     ) {
       setError("Please fill all the fields");
-      setIsSubmitting(false);
       return;
     }
-    //we need to check if the ticker user entered is valid or not 
+    //we need to check if the ticker user entered is valid or not
 
     const rawInput = (newStockSymbol || "").trim();
-    const compact = rawInput.replace(/\s/g, "").toUpperCase();//here removing all spaces from input and converting to uppercase
+    const compact = rawInput.replace(/\s/g, "").toUpperCase(); //here removing all spaces from input and converting to uppercase
     const isTickerLike = /^[A-Z0-9.\-^]+$/.test(compact);
     //Apple Inc. (AAPL)
     //match[1] returns AAPL(i.e inside parentheses wala)
@@ -126,7 +126,6 @@ function Oneportfolio() {
     if (!sym) {
       setError("Enter a valid ticker or company name.");
       setTimeout(() => setError(""), 4500);
-      setIsSubmitting(false);
       return;
     }
 
@@ -136,17 +135,14 @@ function Oneportfolio() {
       isNaN(Date.parse(newStockDate))
     ) {
       setError("Quantity, Price, and Date must be valid");
-      setIsSubmitting(false);
       return;
     }
     if (newStockDate > new Date().toISOString().split("T")[0]) {
       setError("Buy date cannot be in the future");
-      setIsSubmitting(false);
       return;
     }
     if (Number(newStockQuantity) <= 0 || Number(newStockPrice) <= 0) {
       setError("Quantity and Price must be greater than zero");
-      setIsSubmitting(false);
       return;
     }
     const response = await fetch(`${backend_url}/add_stock`, {
@@ -176,7 +172,6 @@ function Oneportfolio() {
     } else {
       setError("Failed to add stock: " + (result.detail || result.message));
     }
-    setIsSubmitting(false);
   };
 
   const handleDeleteStock = async (_id) => {
@@ -261,7 +256,6 @@ function Oneportfolio() {
   };
   //we have the portfolio holdings already in the frontend so maybe we can use that only for analyzing on backend
   const handleAnalyzePortfolio = async () => {
-    setAnalysing(true);
     const response = await fetch(`${backend_url}/analyze_portfolio`, {
       method: "POST",
       headers: {
@@ -279,10 +273,8 @@ function Oneportfolio() {
       setError(
         result.detail || result.message || "Failed to analyze portfolio",
       );
-      setAnalysing(false);
       return;
     }
-    setAnalysing(false);
 
     navigate(`/portfolio-analysis/${id}`, {
       state: {
@@ -299,9 +291,13 @@ function Oneportfolio() {
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
       <div className="max-w-6xl mx-auto bg-[#0d171b] rounded-lg shadow flex flex-col items-center justify-center">
         {getting ? (
-          <div className="text-gray-400 text-lg">Loading portfolio details...</div>
+          <div className="text-gray-400 text-lg">
+            Loading portfolio details...
+          </div>
         ) : holdings.length === 0 ? (
-          <div className="text-gray-400 text-lg">No stocks in this portfolio.</div>
+          <div className="text-gray-400 text-lg">
+            No stocks in this portfolio.
+          </div>
         ) : (
           <div className="w-full overflow-x-auto rounded-lg border border-gray-700 p-4">
             <table className="w-full border border-gray-200 text-left">

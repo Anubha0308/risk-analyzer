@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react" // added useCallback
 import { backend_url } from "../config.js"
 
 const NotificationBell = () => {
@@ -7,7 +7,7 @@ const NotificationBell = () => {
   const [unreadCount, setUnreadCount] = useState(0)
   const ref = useRef()
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const res  = await fetch(`${backend_url}/notifications`, {
         method: "GET",
@@ -19,9 +19,13 @@ const NotificationBell = () => {
     } catch (e) {
       console.error("Failed to fetch notifications", e)
     }
-  }
+  }, []);
 
-  useEffect(() => { fetchNotifications() }, [])
+  useEffect(() => { 
+    const startnoting = async()=>{
+      await fetchNotifications();
+    }
+    startnoting }, [fetchNotifications])
 
   useEffect(() => {
     const handler = (e) => {
@@ -44,14 +48,15 @@ const NotificationBell = () => {
   }
 
   const timeAgo = (dateStr) => {
-    const diff = Date.now() - new Date(dateStr)
-    const mins = Math.floor(diff / 60000)
-    if (mins < 1)  return "just now"
-    if (mins < 60) return `${mins}m ago`
-    const hrs = Math.floor(mins / 60)
-    if (hrs < 24)  return `${hrs}h ago`
-    return `${Math.floor(hrs / 24)}d ago`
-  }
+  const past = new Date(dateStr).getTime();
+  const current = new Date().getTime(); 
+  const diff = current - past;
+  
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 3600000)}h ago`;
+};
 
   return (
     <div className="relative" ref={ref}>

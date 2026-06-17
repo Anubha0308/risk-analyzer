@@ -73,7 +73,7 @@ function SellAdvice() {
           setError(data.detail || "Failed to get prediction");
         }
       }
-    } catch (err) {
+    } catch  {
       setError("Network error. Please check if the server is running.");
     } finally {
       setLoading(false);
@@ -137,7 +137,7 @@ function SellAdvice() {
         } else {
           setIsAuthenticated(false);
         }
-      } catch (err) {
+      } catch {
         setIsAuthenticated(false);
       } finally {
         setCheckingAuth(false);

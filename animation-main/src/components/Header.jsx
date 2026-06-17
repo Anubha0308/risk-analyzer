@@ -2,15 +2,16 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import NotificationBell from "./notificationBell";
 
-const Header = () => {
+const Header = ({ onProfileClick, onNotificationsClick }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navLinks = [
     { to: "/market-overview", label: "Market Overview" },
     { to: "/about", label: "About" },
     { to: "/Disclaimer", label: "Model Information" },
   ];
-
+  
   return (
+     //header is sticky 
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d171b]/95 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
@@ -42,20 +43,25 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <NotificationBell />
+            <NotificationBell onClick={onNotificationsClick} />
+            <button
+              onClick={onProfileClick}
+              className=" md:flex h-10 w-10 items-center justify-center rounded-lg bg-[#0d171b] dark:bg-slate-800 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
+              style={{ fontFamily: "Manrope, sans-serif" }}
+            >
+              <span className="rounded-full bg-transparent flex items-center justify-center">
+                👤
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => setMobileOpen((prev) => !prev)}
               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-[#0d171b] shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors md:hidden"
-              aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={
+                mobileOpen ? "Close navigation menu" : "Open navigation menu"
+              }
             >
               <span className="material-symbols-outlined text-lg">menu</span>
-            </button>
-            <button
-              className="hidden md:flex items-center justify-center rounded-lg bg-[#0d171b] dark:bg-slate-800 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
-              style={{ fontFamily: "Manrope, sans-serif" }}
-            >
-              Profile
             </button>
           </div>
         </div>
@@ -85,3 +91,4 @@ const Header = () => {
 };
 
 export default Header;
+//error display creating problem here 

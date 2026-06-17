@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import ErrorDisplay from "./ErrorDisplay";
 import { backend_url } from "../config";
@@ -19,7 +19,7 @@ function Intraday() {
   const [chartData, setChartData] = useState([]);
   const [latestPrice, setLatestPrice] = useState(null);
 
-  const fetchIntraday = async () => {
+  const fetchIntraday = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -53,11 +53,11 @@ function Intraday() {
     } finally {
       setLoading(false);
     }
-  };
+  },[symbol]);
 
   useEffect(() => {
     fetchIntraday();
-  }, [symbol]);
+  }, [fetchIntraday]);//what is wrong here 
 
   const formattedSymbol = symbol?.toUpperCase() || "";
   const todayLabel = new Date().toLocaleDateString(undefined, {

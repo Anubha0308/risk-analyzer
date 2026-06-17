@@ -9,6 +9,7 @@ import { FaRegEdit as RenameIcon } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa";
 import { backend_url } from "../config";
 import ErrorDisplay from "./ErrorDisplay";
+import Instructions from "./Instructions";
 
 import { useState, useEffect } from "react";
 
@@ -29,29 +30,11 @@ function Portfolios() {
 
   const [rename, setRename] = useState("");
   const [renamingId, setRenamingId] = useState(null);
-  const [authorized, setAuthorized] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
 
-  const checkAuth = async () => {
-    try {
-      const response = await fetch(`${backend_url}/me`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-
-      const isAuthorized = response.ok;
-      setAuthorized(isAuthorized);
-      return isAuthorized;
-    } catch {
-      setAuthorized(false);
-      return false;
-    }
-  };
+  
 
   const getPortFolios = async () => {
-    setFetching(true);
-
     setError("");
 
     try {
@@ -86,6 +69,7 @@ function Portfolios() {
       setPortfolios(list);
       setFetching(false);
     } catch {
+      setFetching(false);
       setPortfolios([]);
 
       setError("Network error while loading portfolios");
@@ -156,76 +140,12 @@ function Portfolios() {
 
   useEffect(() => {
     const init = async () => {
-      const isAuth = await checkAuth();
-      if (isAuth) {
-        getPortFolios();
-      } else {
-        setFetching(false);
-      }
+      await getPortFolios();
     };
     init();
-  }, []);
+  }, [getPortFolios]);
 
-  const Instructions = () => (
-    <div className="max-w-7xl mx-auto mt-20 text-center p-6 rounded-lg bg-[#0d171b] border border-[#4c5f8e]">
-      <h3 className="text-3xl font-bold text-[#0d171b] dark:text-white mb-10">
-        Portfolio Analysis Features:
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-        {[
-          {
-            title: "Create Your Portfolio",
-            description:
-              "Easily build your investment portfolio by giving unique names to your portfolios.",
-            icon: "add",
-            color: "green",
-          },
-          {
-            title: "Add stocks to Portfolio",
-            description:
-              "Add stocks to your portfolio by searching for stock symbols and selecting the desired stock from the search results.",
-            icon: "show_chart",
-            color: "amber",
-          },
-          {
-            title: "Analyze Portfolio",
-            description:
-              "Analyze your portfolio's performance with detailed insights on total value, profit/loss, risk score and more.",
-            icon: "lightbulb",
-            color: "green",
-          },
-          {
-            title: "See Optimized Portfolio Recommendations",
-            description:
-              "Get personalized portfolio optimization recommendations based on your current holdings and market trends to maximize returns and minimize risks.",
-            icon: "recommend",
-            color: "amber",
-          },
-        ].map((item) => (
-          <div
-            key={item.title}
-            className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div
-                className={`flex h-11 w-11 items-center justify-center rounded-xl bg-${item.color}-500/15 text-${item.color}-500`}
-              >
-                <span className="material-symbols-outlined text-2xl">
-                  {item.icon}
-                </span>
-              </div>
-              <h4 className="text-lg font-bold text-[#0d171b] dark:text-white">
-                {item.title}
-              </h4>
-            </div>
-            <p className="text-sm text-[#4c809a] dark:text-slate-400 leading-relaxed">
-              {item.description}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  
   return (
     <>
       {adding ? (
@@ -263,13 +183,6 @@ function Portfolios() {
               </div>
             </div>
           </div>
-        </div>
-      ) : !authorized ? (
-        <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
-          <div className="flex items-center justify-between mb-6 mt-2">
-            <button onClick={() => navigate(-1)}>← Back</button>
-          </div>
-          <Instructions />
         </div>
       ) : (
         <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
@@ -319,7 +232,7 @@ function Portfolios() {
                             />
                             <FaCheck
                               className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
-                              onClick={(e) => handlerenamesave()}
+                              onClick={() => handlerenamesave()}
                             />
                           </div>
                         ) : (
@@ -330,7 +243,7 @@ function Portfolios() {
                         <span>
                           <RenameIcon
                             className="text-gray-400 mt-2 hover:text-[#13a3ea] transition-all cursor-pointer"
-                            onClick={(e) => {
+                            onClick={() => {
                               handleRename(portfolio._id, portfolio.name);
                             }}
                           />

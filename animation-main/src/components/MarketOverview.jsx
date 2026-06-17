@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { backend_url } from '../config.js';
 import Header from './Header.jsx';
 import ErrorDisplay from './ErrorDisplay.jsx';
+import { useNavigate } from 'react-router-dom';
 
 function MarketOverview() {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -27,7 +29,7 @@ function MarketOverview() {
 
         const data = await response.json();
         setNews(data.news || []);
-      } catch (err) {
+      } catch (err){
         console.error('Error fetching news:', err);
         setError(err.message || 'Failed to load market news');
       } finally {
@@ -54,15 +56,66 @@ function MarketOverview() {
     });
   };
 
+  const handleprofileClick = async () => {
+      try {
+        const response = await fetch(`${backend_url}/profile`, {
+          method: "GET",
+          credentials: "include", // Important for cookies
+        });
+        if (response.ok) {
+          //if user logged in
+          navigate("/profile");
+        } else {
+          // Handle error from backend
+          if (response.status === 401 || response.status === 404) {
+            setError("login to access profile");
+            // Clear error after 3 seconds
+            setTimeout(() => setError(""), 3000);
+          }
+        }
+      } catch {
+        setError("Network error. Please check if the server is running.");
+        setTimeout(() => setError(""), 3000);
+      }
+    };
+  
+    const handlenotificationsClick = async () => {
+      try {
+        const response = await fetch(`${backend_url}/notifications`, {
+          method: "GET",
+          credentials: "include", // Important for cookies
+        });
+        if (response.ok) {
+          //if user logged in
+          navigate("/notifications");
+        } else {
+          // Handle error from backend
+          if (response.status === 401 || response.status === 404) {
+            setError("login to access notifications");
+            // Clear error after 3 seconds
+            setTimeout(() => setError(""), 3000);
+          }
+        }
+      } catch {
+        setError("Network error. Please check if the server is running.");
+        setTimeout(() => setError(""), 3000);
+      }
+    };
+  
+
   return (
     <div 
       className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen flex flex-col"
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
-      <Header />
       {error && <ErrorDisplay message={error} onClose={() => setError(null)} />}
+       <Header
+        onProfileClick={handleprofileClick}
+        onNotificationsClick={handlenotificationsClick}
+      />
+      
 
-      <main className="flex-grow">
+      <main className="grow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
