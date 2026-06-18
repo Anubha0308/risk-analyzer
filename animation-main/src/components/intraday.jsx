@@ -66,6 +66,7 @@ function Intraday() {
     month: "long",
     day: "numeric",
   });
+  console.log(chartData);
 
   return (
     <div className="min-h-screen bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white py-10">
@@ -117,8 +118,10 @@ function Intraday() {
               No intraday data available for this symbol.
             </div>
           ) : (
-            <div className="min-h-[360px]">
+            
+            <div className="h-[360px] w-full">
               <ResponsiveContainer width="100%" height="100%">
+
                 <LineChart data={chartData} margin={{ top: 10, right: 12, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" />
                   <XAxis

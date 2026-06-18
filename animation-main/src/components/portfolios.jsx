@@ -11,7 +11,7 @@ import { backend_url } from "../config";
 import ErrorDisplay from "./ErrorDisplay";
 import Instructions from "./Instructions";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -34,7 +34,7 @@ function Portfolios() {
 
   
 
-  const getPortFolios = async () => {
+  const getPortFolios = useCallback(async () => {
     setError("");
 
     try {
@@ -74,7 +74,7 @@ function Portfolios() {
 
       setError("Network error while loading portfolios");
     }
-  };
+  },[]);
 
   const handleCreatePortfolio = async (portfolioName) => {
     if (!portfolioName.trim()) return setError("Enter portfolio name");

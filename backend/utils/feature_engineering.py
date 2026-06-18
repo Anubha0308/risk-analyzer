@@ -104,32 +104,6 @@ def _prepare_chart_data(df: pd.DataFrame):
         "volatility": chart_df["volatility"].round(4).tolist(),
     }
 
-def _prepare_intraday_data(symbol : str):
-    try:
-        df = yf.Ticker(symbol.upper()).history(period="1d", interval="30m")
-        if df is None or df.empty:
-            # Fallback to a wider window if the market hasn't opened yet today
-            df = yf.Ticker(symbol).history(period="1d", interval="60m")
-            if df is None or df.empty:
-                return None
-        df=df.reset_index()
-        
-        if "Datetime" in df.columns:
-            time_series = df["Datetime"].dt.strftime("%H-%M")#datetime object into formatted date string
-        elif "Date" in df.columns:
-            time_series = df["Date"].dt.strftime("%H-%M")
-        else:
-            return None
-        
-        return {
-            "times": time_series.tolist(),
-            "prices" : df["Close"].round(2).tolist(),
-            "volume" : df["Volume"].astype(int).tolist()
-        }
-        
-    except Exception as e:
-        print(f"Failed to compile intraday chart for {symbol}: {e}")
-        return None
     
 def get_features(symbol: str):
     """
