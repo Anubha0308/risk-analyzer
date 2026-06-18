@@ -1,9 +1,7 @@
 import pandas as pd
 import yfinance as yf
-import math
-import numpy as np
 from database import stock_price_history_collection
-from datetime import timezone,datetime, timedelta
+from datetime import timezone,datetime
 
 from utils.redis_client import get_cache, set_cache
 from utils.redis_keys import stock_history_key
@@ -174,7 +172,7 @@ def get_redis_cached_result(key: str, min_rows: int):
 
         return df[REQUIRED_COLS]
 
-    except Exception as e:
+    except Exception :
         return None
 
 
@@ -200,7 +198,7 @@ def set_redis_cache(key: str, df: pd.DataFrame):
         data = cache_df.to_dict(orient="records")
         set_cache(key, data, ttl=60 * 60 * 6)
 
-    except Exception as e:
+    except Exception :
         return
     
 def is_price_history_fresh(df, max_stale_days=3):

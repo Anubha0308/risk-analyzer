@@ -2,14 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 import traceback
 import joblib
 import os
-import yfinance as yf
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize
 
 from auth_utils import get_current_user
 from utils.portfolio_utils import get_portfolio_with_holdings
-from utils.market_data import get_price_history, get_current_price_info
+from utils.market_data import get_price_history
 from utils.feature_engineering import get_features
 
 
@@ -202,7 +201,7 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
     
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception :
         print("❌ Portfolio optimization error:")
         print(traceback.format_exc())
         raise HTTPException(

@@ -6,7 +6,6 @@ import yfinance as yf
 import math
 import numpy as np
 
-from datetime import datetime, timezone
 from utils.feature_engineering import get_features, FEATURES
 from auth_utils import get_current_user
 from database import user_info_collection
@@ -211,7 +210,7 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
     except HTTPException:
         raise
 
-    except Exception as e:
+    except Exception :
         print("❌ Prediction error:")
         print(traceback.format_exc())
         raise HTTPException(

@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
-import yfinance as yf
 from utils.market_data import get_price_history,get_current_price_info
 # -------------------------------------------------
 # FEATURES (must match training-time order exactly)

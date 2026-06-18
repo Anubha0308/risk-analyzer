@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-import pandas as pd 
+from fastapi import APIRouter, Depends
 import yfinance as yf
 from auth_utils import get_current_user
 

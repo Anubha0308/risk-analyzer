@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-import traceback
 
 from auth_utils import get_current_user
 from database import user_info_collection

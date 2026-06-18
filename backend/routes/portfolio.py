@@ -10,7 +10,7 @@ import pandas as pd
 from auth_utils import get_current_user
 from database import portfolios_collection, holdings_collection
 from utils.feature_engineering import get_features, FEATURES
-from utils.portfolio_utils import get_portfolio_by_id, get_portfolio_holdings, get_portfolio_with_holdings
+from utils.portfolio_utils import get_portfolio_with_holdings
 
 router = APIRouter()
 

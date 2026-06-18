@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-import traceback
 from datetime import datetime, timezone
 
 from auth_utils import get_current_user

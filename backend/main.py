@@ -15,6 +15,15 @@ from fastapi import Request
 from fastapi.responses import RedirectResponse
 from auth.google_auth import oauth
 
+
+from routes.prediction import router as prediction_router
+from routes.market import router as market_router
+from routes.profile import router as profile_router
+from routes.notifications import router as notifications_router
+from routes.portfolio import router as portfolio_router
+from routes.optimize_portfolio import router as optimize_router
+from routes.intraday import router as intraday_router
+
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
 env = os.getenv("ENV", "development").lower()
@@ -214,29 +223,22 @@ def logout(response: Response):
     )
     return {"message": "Logged out"}
 # ---------------- PREDICTION ----------------
-from routes.prediction import router as prediction_router
 app.include_router(prediction_router)
 # ---------------- MARKET ----------------
-from routes.market import router as market_router
 app.include_router(market_router)
 # ---------------- PROFILE ----------------
-from routes.profile import router as profile_router
 app.include_router(profile_router)
 # ------------------ NOTIFICATIONS ----------------
-from routes.notifications import router as notifications_router
 app.include_router(notifications_router)
 # ---------------- PORTFOLIO ----------------
-from routes.portfolio import router as portfolio_router
 app.include_router(portfolio_router)
 
-from routes.optimize_portfolio import router as optimize_router
 app.include_router(optimize_router)
+
+app.include_router(intraday_router)
 
 @app.get("/redis-test")
 def redis_test():
     redis_client.set("hello", "world")
     value = redis_client.get("hello")
     return {"value": value}
-
-from routes.intraday import router as intraday_router
-app.include_router(intraday_router)
