@@ -203,7 +203,7 @@ function Oneportfolio() {
     setNewStockSymbol(stockToEdit.symbol);
     setNewStockQuantity(stockToEdit.quantity);
     setNewStockPrice(stockToEdit.price);
-    setNewStockDate(stockToEdit.buyDate || "");
+    setNewStockDate(stockToEdit.buy_date || "");
   };
 
   const handleUpdateStock = async (_id) => {
