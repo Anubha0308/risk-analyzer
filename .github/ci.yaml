@@ -1,0 +1,58 @@
+name: CI Checks 
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    backend:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Set up Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.12'
+
+        - name: Install dependencies
+          run: |
+            cd backend
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install ruff
+
+        - name: Run lint
+          run: |
+           cd backend 
+           ruff check .
+    
+    frontend:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout Code
+          uses: actions/checkout@v4
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: 18
+            cache: "npm"
+            cache-dependency-path: animation-main/package-lock.json
+
+        - name: Install Frontend Dependencies
+          working-directory: animation-main
+          run: npm ci 
+          #we do not use npm install here , we use npm ci(clean install)
+
+        - name: Lint Frontend
+          working-directory: animation-main
+          run: npm run lint
