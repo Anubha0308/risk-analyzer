@@ -4,16 +4,53 @@ import pandas_ta as ta
 from utils.market_data import get_price_history,get_current_price_info
 # -------------------------------------------------
 # FEATURES (must match training-time order exactly)
+#
+# NOTE: these formulas mirror ml/features.py (the training pipeline). If you
+# change one, change it there too and retrain. The model-v2 feature set is
+# scale-free so it transfers across tickers of very different price levels.
 # -------------------------------------------------
 FEATURES = [
     "rsi",
-    "macd",
-    "volatility",
-    "sma_20",
-    "sma_50",
+    "macd_norm",
+    "atr_pct",
+    "close_to_sma20",
+    "sma20_to_sma50",
+    "vol_zscore",
+    "dist_from_high_20",
+    "dist_from_low_20",
     "return_5d",
-    "return_20d"
+    "mkt_rel_ret_5d",
 ]
+
+# Raw columns kept on the returned row for the human-readable reasons /
+# notification text only. They are NOT model inputs (callers select FEATURES).
+SIDE_COLUMNS = ["sma_20", "sma_50", "volatility", "macd"]
+
+# Market benchmark for the market-relative return feature (same as training).
+MARKET_BENCHMARK = "SPY"
+
+
+def _benchmark_return_5d(index: pd.DatetimeIndex) -> pd.Series:
+    """5-day return of the market benchmark, aligned to ``index``.
+
+    Returns a Series of 0.0 (neutral) if the benchmark can't be fetched so a
+    transient data issue degrades rather than breaks predictions.
+    """
+    try:
+        spy_df, _ = get_price_history(MARKET_BENCHMARK, period="6mo", min_rows=50)
+        if spy_df is None or spy_df.empty:
+            raise ValueError("benchmark history unavailable")
+        spy_ret = spy_df["Close"].pct_change(5, fill_method=None)
+        spy_ret.index = pd.to_datetime(spy_ret.index).tz_localize(None).normalize()
+        aligned = spy_ret.reindex(
+            pd.to_datetime(index).tz_localize(None).normalize()
+        )
+        aligned.index = index
+        return aligned
+    except Exception as e:
+        print(f"⚠️  benchmark return unavailable ({e}); using 0.0 (neutral)")
+        return pd.Series(0.0, index=index)
+
 
 # -------------------------------------------------
 # Build features from raw OHLCV dataframe
@@ -21,7 +58,8 @@ FEATURES = [
 def build_features(df: pd.DataFrame) -> pd.Series:
     """
     Builds model-ready features from raw OHLCV stock data.
-    Used internally for inference.
+    Used internally for inference. Returns the latest row containing the model
+    FEATURES (in order) plus SIDE_COLUMNS for the reason/notification text.
     """
 
     # Ensure numeric types
@@ -31,43 +69,61 @@ def build_features(df: pd.DataFrame) -> pd.Series:
     if existing_cols:
         df[existing_cols] = df[existing_cols].apply(pd.to_numeric, errors="coerce")
 
-    # Technical indicators
-    df["rsi"] = ta.rsi(df["Close"], length=14)
-    
-    # MACD - pandas_ta.macd returns DataFrame with columns: MACD_12_26_9, MACDs_12_26_9, MACDh_12_26_9
-    macd_result = ta.macd(df["Close"])
+    close = df["Close"]
+
+    # ---- raw indicators (side columns + inputs to scale-free features) ----
+    df["rsi"] = ta.rsi(close, length=14)
+
+    # MACD - pandas_ta.macd returns DataFrame with columns: MACD_12_26_9, ...
+    macd_result = ta.macd(close)
     if macd_result is not None and not macd_result.empty and "MACD_12_26_9" in macd_result.columns:
         df["macd"] = macd_result["MACD_12_26_9"]
     else:
-        # Fallback if MACD calculation fails or column name differs
         df["macd"] = np.nan
-    
-    df["volatility"] = df["Close"].pct_change(fill_method=None).rolling(10).std()
 
-    df["sma_20"] = ta.sma(df["Close"], length=20)
-    df["sma_50"] = ta.sma(df["Close"], length=50)
+    df["volatility"] = close.pct_change(fill_method=None).rolling(10).std()
+    df["sma_20"] = ta.sma(close, length=20)
+    df["sma_50"] = ta.sma(close, length=50)
 
-    df["return_5d"] = df["Close"].pct_change(5, fill_method=None)
-    df["return_20d"] = df["Close"].pct_change(20, fill_method=None)
+    atr = ta.atr(df["High"], df["Low"], close, length=14)
+    df["return_5d"] = close.pct_change(5, fill_method=None)
+
+    # ---- scale-free model features (mirror ml/features.py) ----------------
+    df["macd_norm"] = df["macd"] / close
+    df["atr_pct"] = atr / close
+    df["close_to_sma20"] = close / df["sma_20"] - 1.0
+    df["sma20_to_sma50"] = df["sma_20"] / df["sma_50"] - 1.0
+
+    vol_mean = df["Volume"].rolling(20).mean()
+    vol_std = df["Volume"].rolling(20).std()
+    df["vol_zscore"] = (df["Volume"] - vol_mean) / vol_std
+
+    df["dist_from_high_20"] = close / close.rolling(20).max() - 1.0
+    df["dist_from_low_20"] = close / close.rolling(20).min() - 1.0
+
+    # market-relative momentum (same benchmark/definition as training)
+    df["mkt_rel_ret_5d"] = df["return_5d"] - _benchmark_return_5d(df.index)
+
     # Drop incomplete rows (but keep track of original length)
     original_len = len(df)
-    df.dropna(inplace=True)
-    
+    needed = list(dict.fromkeys(FEATURES + SIDE_COLUMNS))
+    df.dropna(subset=needed, inplace=True)
+
     if df.empty:
         raise ValueError(f"All {original_len} rows were dropped due to NaN values after feature calculation")
 
     # Ensure all features are present
-    missing_features = [f for f in FEATURES if f not in df.columns]
+    missing_features = [f for f in needed if f not in df.columns]
     if missing_features:
         raise ValueError(f"Missing required features: {missing_features}")
 
-    # Return latest feature row in correct order
-    feature_row = df[FEATURES].iloc[-1]
-    
+    # Return latest row with FEATURES (in order) + side columns
+    feature_row = df[needed].iloc[-1]
+
     # Check for any NaN values in the feature row
     if feature_row.isnull().any():
         return None
-    
+
     return feature_row
 
 

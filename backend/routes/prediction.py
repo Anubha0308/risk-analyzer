@@ -155,42 +155,70 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
         )
 
         # -------- Build reasons --------
-        rsi = float(features_df.iloc[0].get("rsi", 0))
+        # risk_score = P(forward-10d realized vol in top tercile of this stock's
+        # own recent history). Reasons explain what's driving the vol-regime score.
+        rsi   = float(features_df.iloc[0].get("rsi", 0))
         sma20 = float(features_df.iloc[0].get("sma_20", 0))
         sma50 = float(features_df.iloc[0].get("sma_50", 0))
-        vol = float(features_df.iloc[0].get("volatility", 0))
-        
-        reasons = []
-        if rsi >= 70:
-            reasons.append(f"RSI at {rsi:.1f} indicates overbought momentum")
-        elif rsi <= 30:
-            reasons.append(f"RSI at {rsi:.1f} indicates oversold momentum")
-        else:
-            reasons.append(f"RSI at {rsi:.1f} indicates stable momentum")
+        vol   = float(features_df.iloc[0].get("volatility", 0))
 
-        if sma20 > sma50:
-            reasons.append("Price is above short-term and medium-term averages")
-        else:
-            reasons.append("Price is below medium-term average, showing weaker trend")
-
-        if vol >= 0.04:
-            reasons.append("Elevated 10-day volatility")
-        else:
-            reasons.append("Volatility is relatively contained")
-
+        # risk_level anchored to the model's tuned decision threshold (0.52).
+        # HIGH requires a clear margin above that threshold to avoid over-flagging.
         risk_level = (
-            "HIGH" if risk_score > 0.6
-            else "MEDIUM" if risk_score > 0.4
+            "HIGH"   if risk_score > 0.65
+            else "MEDIUM" if risk_score > 0.45
             else "LOW"
         )
 
         recommendation = (
-            "High downside risk — consider selling"
-            if risk_score > 0.6
-            else "Moderate risk — monitor closely"
-            if risk_score > 0.4
-            else "Low risk — hold"
+            "Elevated volatility risk relative to this stock's own history — review position sizing"
+            if risk_score > 0.65
+            else "Moderate volatility risk — monitor position closely"
+            if risk_score > 0.45
+            else "Volatility risk is contained — hold"
         )
+
+        # Reasons must be internally consistent: never say "vol is contained"
+        # when risk_score is elevated, or vice versa.
+        reasons = []
+
+        if rsi >= 70:
+            reasons.append(
+                f"RSI at {rsi:.1f} — overbought momentum often precedes a volatility pickup"
+            )
+        elif rsi <= 30:
+            reasons.append(
+                f"RSI at {rsi:.1f} — oversold conditions can trigger sharp volatility swings"
+            )
+        else:
+            reasons.append(
+                f"RSI at {rsi:.1f} — momentum is neutral, not materially adding to volatility risk"
+            )
+
+        if sma20 < sma50:
+            reasons.append(
+                "Short-term average is below medium-term — trend weakness is a volatility amplifier"
+            )
+        else:
+            reasons.append(
+                "Short-term average is above medium-term — trend is supportive, muting volatility risk"
+            )
+
+        if vol >= 0.04:
+            reasons.append(
+                "Trailing 10-day realized volatility is elevated — reinforces the high volatility-regime score"
+                if risk_score > 0.45
+                else "Trailing 10-day realized volatility is elevated"
+            )
+        else:
+            if risk_score > 0.45:
+                reasons.append(
+                    "Recent realized volatility is contained, but trend and momentum features are pushing the regime score higher"
+                )
+            else:
+                reasons.append(
+                    "Trailing 10-day realized volatility is contained — conditions are calmer than this stock's recent norms"
+                )
 
         response ={
             "symbol": symbol.upper(),

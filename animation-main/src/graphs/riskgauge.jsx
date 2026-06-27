@@ -7,8 +7,8 @@ import {
 } from "recharts";
 
 const getGaugeColor = (value) => {
-  if (value >= 70) return "#ef4444"; // high risk
-  if (value >= 40) return "#f59e0b"; // medium risk
+  if (value >= 65) return "#ef4444"; // high risk (matches >0.65 backend threshold)
+  if (value >= 45) return "#f59e0b"; // medium risk (matches >0.45 backend threshold)
   return "#22c55e"; // low risk
 };
 

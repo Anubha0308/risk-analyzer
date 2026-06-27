@@ -1,0 +1,18 @@
+{
+  "decision_threshold": 0.5199999999999999,
+  "tuned_on": "TimeSeriesSplit CV pooled probabilities (train+val), balanced precision=recall criterion",
+  "note": "risk_score stays a probability in [0,1]. Threshold is the binary high/not-high vol-regime cut for evaluation; it does NOT change the API response shape.",
+  "label": "vol_regime=1 when forward-10d realized vol > 67th pctile of that ticker's trailing 252-day forward-vol distribution",
+  "features": [
+    "rsi",
+    "macd_norm",
+    "atr_pct",
+    "close_to_sma20",
+    "sma20_to_sma50",
+    "vol_zscore",
+    "dist_from_high_20",
+    "dist_from_low_20",
+    "return_5d",
+    "mkt_rel_ret_5d"
+  ]
+}

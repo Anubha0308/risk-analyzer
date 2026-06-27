@@ -108,7 +108,7 @@ def notify_user(user_email: str, symbol: str, data: dict):
     if risk_score > 0.6:
         save_notification(
             user_email, symbol, "high_risk",
-            f"{symbol} is at HIGH downside risk — model score: {risk_score:.0%}. Consider reviewing your position.",
+            f"{symbol} is entering an elevated volatility regime — model score: {risk_score:.0%}. Review your position sizing.",
             risk_score
         )
 

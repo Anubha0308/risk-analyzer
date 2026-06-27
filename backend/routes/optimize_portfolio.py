@@ -9,7 +9,7 @@ from scipy.optimize import minimize
 from auth_utils import get_current_user
 from utils.portfolio_utils import get_portfolio_with_holdings
 from utils.market_data import get_price_history
-from utils.feature_engineering import get_features
+from utils.feature_engineering import get_features, FEATURES
 
 
 router = APIRouter()
@@ -104,7 +104,9 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
                     detail=f"Failed to get features for {symbol}: {error_msg}"
                 )
 
-            risk_score = float(model.predict_proba(features_df)[0][1])
+            # Reselect FEATURES explicitly so a feature-set change can never
+            # silently misalign columns fed to the model.
+            risk_score = float(model.predict_proba(features_df[FEATURES])[0][1])
 
             daily_return = df["Close"].pct_change().dropna()
             historical_return = float(daily_return.mean() * 252)

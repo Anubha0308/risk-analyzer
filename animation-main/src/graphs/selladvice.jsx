@@ -498,7 +498,7 @@ function SellAdvice() {
                     <RiskGauge value={(prediction.risk_score || 0) * 100} />
                     <div className="text-center flex flex-row gap-4 items-center">
                       <div className="text-sm text-[#4c809a] dark:text-slate-400">
-                        Risk Score(chance of a 5%+ drop this week)
+                        Volatility-regime risk score (probability of elevated vol vs. this stock's own recent history)
                       </div>
                       <div className="text-3xl font-bold text-[#0d171b] dark:text-white">
                         {((prediction.risk_score || 0) * 100).toFixed(1)}%
