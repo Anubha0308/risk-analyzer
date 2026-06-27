@@ -36,6 +36,7 @@ function PortfolioAnalyze() {
   }
 
   const name = data.portfolio_name || "Your Portfolio";
+  const base_currency = data.base_currency;
   const summary = data.summary || {};
   const holdings = data.holdings || [];
   const riskContribution = data.risk_contribution || [];
@@ -87,7 +88,7 @@ function PortfolioAnalyze() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
           <p className="text-gray-400 text-sm">Total Portfolio Value</p>
-          <h2 className="text-2xl font-bold mt-2">${summary.total_value}</h2>
+          <h2 className="text-2xl font-bold mt-2">{summary.total_value}<span>{base_currency}</span></h2>
           <p className={profitClass(summary.total_value_change)}>
             {summary.total_value_change_pct}%
           </p>
@@ -96,7 +97,7 @@ function PortfolioAnalyze() {
         <div className="bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
           <p className="text-gray-400 text-sm">Total Profit / Loss</p>
           <h2 className={`text-2xl font-bold mt-2 ${profitClass(summary.total_pl)}`}>
-            ${summary.total_pl}
+            {summary.total_pl}<span>{base_currency}</span>
           </h2>
           <p className={profitClass(summary.total_pl)}>
             {summary.total_pl_pct}%
@@ -116,7 +117,7 @@ function PortfolioAnalyze() {
         <div className="bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
           <p className="text-gray-400 text-sm">Today's Change</p>
           <h2 className={`text-2xl font-bold mt-2 ${profitClass(summary.total_value_change)}`}>
-            ${summary.total_value_change}
+            {summary.total_value_change}<span>{base_currency}</span>
           </h2>
           <p className={profitClass(summary.total_value_change)}>
             {summary.total_value_change_pct}%
@@ -199,8 +200,9 @@ function PortfolioAnalyze() {
                   <th className="p-3 text-left">Qty</th>
                   <th className="p-3 text-left">Buy Price</th>
                   <th className="p-3 text-left">Current Price</th>
-                  <th className="p-3 text-left">Current Value</th>
-                  <th className="p-3 text-left">P/L</th>
+                  <th className="p-3 text-left">Current Price<span>({base_currency})</span></th>
+                  <th className="p-3 text-left">Current Value<span>({base_currency})</span></th>
+                  <th className="p-3 text-left">P/L<span>({base_currency})</span></th>
                   <th className="p-3 text-left">P/L %</th>
                   <th className="p-3 text-left">Risk</th>
                 </tr>
@@ -211,11 +213,12 @@ function PortfolioAnalyze() {
                   <tr key={stock._id} className="border-b border-slate-700">
                     <td className="p-3 font-semibold">{stock.symbol}</td>
                     <td className="p-3">{stock.quantity}</td>
-                    <td className="p-3">${stock.avg_buy_price}</td>
-                    <td className="p-3">${stock.current_price}</td>
-                    <td className="p-3">${stock.current_value}</td>
+                    <td className="p-3">{stock.avg_buy_price}</td>
+                    <td className="p-3">{stock.current_price}<span>{stock.currency_type}</span></td>
+                    <td className="p-3">{stock.current_price_usd}</td>
+                    <td className="p-3">{stock.current_value}</td>
                     <td className={`p-3 ${profitClass(stock.pl_amount)}`}>
-                      ${stock.pl_amount}
+                      {stock.pl_amount}
                     </td>
                     <td className={`p-3 ${profitClass(stock.pl_pct)}`}>
                       {stock.pl_pct}%

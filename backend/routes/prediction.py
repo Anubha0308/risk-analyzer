@@ -63,10 +63,10 @@ def get_cached_prediction(key: str):
         #we need to convert the cached_result back to feasible format
         return cached_result
     return None
-        
+
 # ---------------- PREDICTION ENDPOINT ----------------
 @router.get("/predict/risk/{symbol}")
-def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user is email 
+def predict_risk(symbol: str, user: str = Depends(get_current_user)):
     try:
         if model is None:
             raise HTTPException(
@@ -74,89 +74,70 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
                 detail="ML model not loaded"
             )
 
-        company_name = None
-        try:
-            info = yf.Ticker(symbol.upper()).info or {}
-            company_name = info.get("shortName") or info.get("longName") or info.get("displayName")
-        except Exception:
-            company_name = None
-            
-        #check for redis cache here
-        cache_key = prediction_key(symbol.upper())
-        cached_prediction = get_cached_prediction(cache_key)
-        if cached_prediction is not None:
-            user_info_collection.update_one(
-                {"email": user},
-                {"$pull": {"recently_viewed": symbol}}
-            )
+        symbol_upper = symbol.upper()
 
-            # 2. Push to front & limit to 6
-            user_info_collection.update_one(
-                {"email": user},
-                {
-                    "$push": {
-                        "recently_viewed": {
-                            "$each": [symbol],
-                            "$position": 0,
-                            "$slice": 6
-                        }
-                    }
-                }
-            )
+        #idhar par pulling fresh real-time asset info on every single request
+        currency_type = "USD"
+        company_name = None
+        current_price = None
+        price_change_pct = None
+
+        try:
+            ticker = yf.Ticker(symbol_upper)
+            info = ticker.info or {}
+            company_name = info.get("shortName") or info.get("longName") or info.get("displayName")
+            currency_type = info.get("currency")
+
+            fast = ticker.fast_info
+            current_price = fast.get("last_price")
+            prev_close = fast.get("previous_close")
+
+            if current_price is not None and prev_close:
+                price_change_pct = round((current_price - prev_close) / prev_close * 100, 2)
+        except Exception:
+            pass
+
+        cache_key = prediction_key(symbol_upper)
+        cached_prediction = get_cached_prediction(cache_key)
+
+        if cached_prediction is not None:
+            _update_recently_viewed(user, symbol_upper)
+
+            cached_prediction["current_price"] = round(float(current_price), 2) if current_price is not None else cached_prediction.get("current_price")
+            cached_prediction["price_change"] = price_change_pct if price_change_pct is not None else cached_prediction.get("price_change")
+            cached_prediction["company_name"] = company_name or cached_prediction.get("company_name")
+            cached_prediction["currency_type"] = currency_type or cached_prediction.get("currency_type")
+
             return clean_json_value(cached_prediction)
-        
-        # -------- Fetch features and chart series --------
-        features_df, chart_data, price_change_pct, current_price, error_msg = get_features(symbol)
+
+        features_df, chart_data, fallback_change, fallback_price, error_msg = get_features(symbol_upper)
 
         if features_df is None or features_df.empty:
             detail = error_msg if error_msg else "Feature generation failed"
-            raise HTTPException(
-                status_code=500,
-                detail=detail
-            )
+            raise HTTPException(status_code=500, detail=detail)
 
-        # -------- Select required features --------
+        if current_price is None:
+            current_price = fallback_price
+        if price_change_pct is None:
+            price_change_pct = fallback_change
+
         try:
             X = features_df[FEATURES]
         except KeyError:
-            raise HTTPException(
-                status_code=500,
-                detail="Feature mismatch between training and inference"
-            )
+            raise HTTPException(status_code=500, detail="Feature mismatch between training and inference")
 
         if X.isnull().any().any():
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid (NaN) feature values"
-            )
+            raise HTTPException(status_code=500, detail="Invalid (NaN) feature values")
 
-        # -------- Predict --------
         risk_score = model.predict_proba(X)[0][1]
-        
-        #---------Update user's recently viewed stocks--------
-        # 1. Remove if already present
-        user_info_collection.update_one(
-            {"email": user},
-            {"$pull": {"recently_viewed": symbol}}
-        )
 
-        # 2. Push to front & limit to 6
-        user_info_collection.update_one(
-            {"email": user},
-            {
-                "$push": {
-                    "recently_viewed": {
-                        "$each": [symbol],
-                        "$position": 0,
-                        "$slice": 6
-                    }
-                }
-            }
-        )
+        # Update user tracking
+        _update_recently_viewed(user, symbol_upper)
 
-        # -------- Build reasons --------
+        # -------- Build risk label + reasons --------
         # risk_score = P(forward-10d realized vol in top tercile of this stock's
-        # own recent history). Reasons explain what's driving the vol-regime score.
+        # own recent history). Thresholds anchored to the model's tuned decision
+        # threshold (0.52); HIGH requires a clear margin above it to avoid over-flagging.
         rsi   = float(features_df.iloc[0].get("rsi", 0))
         sma20 = float(features_df.iloc[0].get("sma_20", 0))
         sma50 = float(features_df.iloc[0].get("sma_50", 0))
@@ -171,11 +152,11 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
         )
 
         recommendation = (
-            "Elevated volatility risk relative to this stock's own history — review position sizing"
+            "Elevated volatility risk relative to this stock's own history - review position sizing"
             if risk_score > 0.65
-            else "Moderate volatility risk — monitor position closely"
+            else "Moderate volatility risk - monitor position closely"
             if risk_score > 0.45
-            else "Volatility risk is contained — hold"
+            else "Volatility risk is contained - hold"
         )
 
         # Reasons must be internally consistent: never say "vol is contained"
@@ -184,29 +165,29 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
 
         if rsi >= 70:
             reasons.append(
-                f"RSI at {rsi:.1f} — overbought momentum often precedes a volatility pickup"
+                f"RSI at {rsi:.1f} - overbought momentum often precedes a volatility pickup"
             )
         elif rsi <= 30:
             reasons.append(
-                f"RSI at {rsi:.1f} — oversold conditions can trigger sharp volatility swings"
+                f"RSI at {rsi:.1f} - oversold conditions can trigger sharp volatility swings"
             )
         else:
             reasons.append(
-                f"RSI at {rsi:.1f} — momentum is neutral, not materially adding to volatility risk"
+                f"RSI at {rsi:.1f} - momentum is neutral, not materially adding to volatility risk"
             )
 
         if sma20 < sma50:
             reasons.append(
-                "Short-term average is below medium-term — trend weakness is a volatility amplifier"
+                "Short-term average is below medium-term - trend weakness is a volatility amplifier"
             )
         else:
             reasons.append(
-                "Short-term average is above medium-term — trend is supportive, muting volatility risk"
+                "Short-term average is above medium-term - trend is supportive, muting volatility risk"
             )
 
         if vol >= 0.04:
             reasons.append(
-                "Trailing 10-day realized volatility is elevated — reinforces the high volatility-regime score"
+                "Trailing 10-day realized volatility is elevated - reinforces the high volatility-regime score"
                 if risk_score > 0.45
                 else "Trailing 10-day realized volatility is elevated"
             )
@@ -217,12 +198,13 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
                 )
             else:
                 reasons.append(
-                    "Trailing 10-day realized volatility is contained — conditions are calmer than this stock's recent norms"
+                    "Trailing 10-day realized volatility is contained - conditions are calmer than this stock's recent norms"
                 )
 
-        response ={
-            "symbol": symbol.upper(),
+        response = {
+            "symbol": symbol_upper,
             "company_name": company_name,
+            "currency_type": currency_type,
             "risk_score": round(float(risk_score), 3),
             "price_change": price_change_pct,
             "risk_level": risk_level,
@@ -231,17 +213,24 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):#here user 
             "charts": chart_data or {},
             "current_price": round(float(current_price), 2) if current_price is not None else None,
         }
+
         response = clean_json_value(response)
+
         set_cache(cache_key, response, ttl=60 * 30)
         return response
 
     except HTTPException:
         raise
-
-    except Exception :
+    except Exception:
         print("❌ Prediction error:")
         print(traceback.format_exc())
-        raise HTTPException(
-            status_code=500,
-            detail="Unexpected error during prediction"
-        )
+        raise HTTPException(status_code=500, detail="Unexpected error during prediction")
+
+
+def _update_recently_viewed(user: str, symbol: str):
+
+    user_info_collection.update_one({"email": user}, {"$pull": {"recently_viewed": symbol}})
+    user_info_collection.update_one(
+        {"email": user},
+        {"$push": {"recently_viewed": {"$each": [symbol], "$position": 0, "$slice": 6}}}
+    )

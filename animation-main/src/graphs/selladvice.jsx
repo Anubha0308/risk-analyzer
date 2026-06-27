@@ -36,6 +36,7 @@ function SellAdvice() {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [similarStocks, setSimilarStocks] = useState([]);
   const [similarLoading, setSimilarLoading] = useState(false);
+  const userTypingRef = React.useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { symbol, name } = location.state || {};
@@ -155,7 +156,7 @@ function SellAdvice() {
   useEffect(() => {
     let cancelled = false;
     const q = searchValue.trim();
-    if (q.length < 2) {
+    if (q.length < 2 || !userTypingRef.current) {
       setSuggestions([]);
       setSuggestOpen(false);
       return;
@@ -349,6 +350,7 @@ function SellAdvice() {
                   type="text"
                   value={searchValue}
                   onChange={(e) => {
+                    userTypingRef.current = true;
                     setSearchValue(e.target.value);
                     setSelectedSymbol("");
                     setSelectedName("");
@@ -384,6 +386,7 @@ function SellAdvice() {
                           className="w-full px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex items-start justify-between gap-4"
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => {
+                            userTypingRef.current = false;
                             setSelectedSymbol(sug.symbol);
                             setSelectedName(sug.name);
                             setSearchValue(`${sug.name} (${sug.symbol})`);
@@ -448,7 +451,10 @@ function SellAdvice() {
                           Current Price
                         </div>
                         <div className="text-xs md:text-2xl font-bold text-[#0d171b] dark:text-white">
-                          ${prediction.current_price}
+                          {prediction.current_price}
+                        </div>
+                        <div className="text-xs md:text-sm text-[#4c809a] dark:text-slate-400 mb-1">
+                          {prediction.currency_type}
                         </div>
                       </div>
                       <div className="flex-row gap-2">

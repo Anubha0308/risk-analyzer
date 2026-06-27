@@ -86,6 +86,7 @@ function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedFullName, setEditedFullName] = useState("");
   const [editedWatchlist, setEditedWatchlist] = useState([]);
+  const [editedBasecurrency, setEditedBasecurrency] = useState("");
   const [newStockSymbol, setNewStockSymbol] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -107,6 +108,7 @@ function Profile() {
         const data = await response.json();
         setUserData(data);
         setEditedFullName(data.full_name || "");
+        setEditedBasecurrency(data.base_currency);
         setEditedWatchlist(data.watchlist || []);
       } else if (response.status === 401) {
         // Not logged in
@@ -126,6 +128,7 @@ function Profile() {
     if (!userData) return;
     setIsEditing(true);
     setEditedFullName(userData.full_name || "");
+    setEditedBasecurrency(userData.base_currency);
     setEditedWatchlist(userData.watchlist || []);
   };
 
@@ -133,6 +136,7 @@ function Profile() {
     setIsEditing(false);
     if (!userData) return;
     setEditedFullName(userData.full_name || "");
+    setEditedBasecurrency(userData.base_currency);
     setEditedWatchlist(userData.watchlist || []);
     setNewStockSymbol("");
   };
@@ -161,6 +165,7 @@ function Profile() {
         credentials: "include",
         body: JSON.stringify({
           full_name: editedFullName,
+          base_currency: editedBasecurrency,
           watchlist: editedWatchlist,
         }),
       });
@@ -282,6 +287,25 @@ function Profile() {
                 ) : (
                   <p className="mt-1 text-lg font-medium text-[#0d171b] dark:text-white">
                     {userData.full_name || "Not set"}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#4c809a] dark:text-slate-400">
+                  Base Currency
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedBasecurrency}
+                    onChange={(e) => setEditedBasecurrency(e.target.value)}
+                    className="mt-1 block w-full rounded-lg border-0 py-2 px-3 text-[#0d171b] shadow-sm ring-1 ring-inset ring-[#cfdfe7] focus:ring-2 focus:ring-inset focus:ring-[#13a4ec] bg-white dark:bg-slate-700 dark:text-white dark:ring-slate-600 sm:text-sm"
+                  >
+                    <option value="USD">USD</option>
+                    <option value="INR">INR</option>
+                  </select>
+                ) : (
+                  <p className="mt-1 text-lg font-medium text-[#0d171b] dark:text-white">
+                    {userData.base_currency || "Not set"}
                   </p>
                 )}
               </div>
