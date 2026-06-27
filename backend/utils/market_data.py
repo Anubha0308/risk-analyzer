@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import yfinance as yf
 from database import stock_price_history_collection
@@ -260,6 +261,11 @@ def get_current_price_info(symbol: str, df: pd.DataFrame):
         fast = ticker.fast_info
         current_price = fast.get("last_price")
         prev_close = fast.get("previous_close")
+        # fast_info returns NaN (not None) when no live quote is available
+        if current_price is not None and math.isnan(float(current_price)):
+            current_price = None
+        if prev_close is not None and math.isnan(float(prev_close)):
+            prev_close = None
     except Exception:
         pass
 

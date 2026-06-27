@@ -91,6 +91,18 @@ def predict_risk(symbol: str, user: str = Depends(get_current_user)):
             fast = ticker.fast_info
             current_price = fast.get("last_price")
             prev_close = fast.get("previous_close")
+            # fast_info returns NaN (not None) when no live quote is available
+            if current_price is not None and math.isnan(float(current_price)):
+                current_price = None
+            if prev_close is not None and math.isnan(float(prev_close)):
+                prev_close = None
+            # fallback to info fields if fast_info had no live quote
+            if current_price is None:
+                current_price = (
+                    info.get("regularMarketPrice")
+                    or info.get("currentPrice")
+                    or info.get("previousClose")
+                )
 
             if current_price is not None and prev_close:
                 price_change_pct = round((current_price - prev_close) / prev_close * 100, 2)

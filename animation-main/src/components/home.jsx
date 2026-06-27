@@ -5,16 +5,16 @@ import ErrorDisplay from "./ErrorDisplay.jsx";
 import Header from "./Header.jsx";
 
 const famousStocks = [
-    { symbol: "AAPL", name: "Apple Inc." },
     { symbol: "TSLA", name: "Tesla Inc." },
-    { symbol: "MSFT", name: "Microsoft Corp." },
     { symbol: "NVDA", name: "NVIDIA Corp." },
     { symbol: "AMZN", name: "Amazon.com, Inc." },
-    { symbol: "GOOGL", name: "Alphabet Inc." },
-    { symbol: "META", name: "Meta Platforms Inc." },
     { symbol: "JPM", name: "JPMorgan Chase & Co." },
     { symbol: "V", name: "Visa Inc." },
     { symbol: "JNJ", name: "Johnson & Johnson" },
+    { symbol: "KO", name: "Coca-Cola Co." },
+    { symbol: "PG", name: "Procter & Gamble Co." },
+    { symbol: "WMT", name: "Walmart Inc." },
+    { symbol: "MCD", name: "McDonald's Corp." },
   ];
 
 // Helper function to fetch risk data
@@ -133,7 +133,7 @@ const StockRiskCard = ({ symbol, name }) => {
                 Price
               </div>
               <div className="text-lg font-bold text-[#0d171b] dark:text-white">
-                ${data.current_price}
+                {data.current_price != null ? `$${data.current_price}` : "-"}
               </div>
             </div>
           </div>
