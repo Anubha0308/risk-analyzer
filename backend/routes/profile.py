@@ -11,6 +11,7 @@ router=APIRouter(prefix="/profile",tags=["profile"])
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
     watchlist: Optional[List[str]] = None
+    base_currency: Optional[str] = None
 
 @router.get("/")
 async def get_profile(user: str = Depends(get_current_user)):
@@ -38,6 +39,11 @@ async def update_profile(
             update_dict["full_name"] = update_data.full_name
         if update_data.watchlist is not None:
             update_dict["watchlist"] = update_data.watchlist
+        if update_data.base_currency is not None:
+            bc = (update_data.base_currency or "").upper()
+            if bc not in {"USD", "INR"}:
+                raise HTTPException(status_code=400, detail="Unsupported base_currency")
+            update_dict["base_currency"] = bc
         
         if not update_dict:
             raise HTTPException(status_code=400, detail="No fields to update")

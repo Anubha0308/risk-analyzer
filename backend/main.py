@@ -82,6 +82,7 @@ def register(request: Request, data: AuthRequest, response: Response):
     })
     user_info_collection.insert_one({
         "email":data.email,
+        "base_currency": "USD",
         "watchlist":[],
         "recently_viewed":[],#upto 6 stocks
         "full_name":""
@@ -177,6 +178,7 @@ async def google_callback(request: Request):
         })
         user_info_collection.insert_one({
             "email": email,
+            "base_currency": "USD",
             "watchlist": [],
             "recently_viewed": [],
             "full_name": ""

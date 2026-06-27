@@ -8,9 +8,10 @@ import yfinance as yf
 import pandas as pd
 
 from auth_utils import get_current_user
-from database import portfolios_collection, holdings_collection
+from database import portfolios_collection, holdings_collection, user_info_collection
 from utils.feature_engineering import get_features, FEATURES
 from utils.portfolio_utils import get_portfolio_with_holdings
+from utils.exchange_price import get_exchange_rate
 
 router = APIRouter()
 
@@ -44,6 +45,7 @@ def _serialize_holding(holding: dict) -> dict:
         "quantity": holding["quantity"],
         "price": holding["price"],
         "buy_date": holding["buy_date"],
+        "currency_type" : holding["currency_type"]
     }
 
 
@@ -145,7 +147,7 @@ def _symbol_snapshot(symbol: str) -> dict:
     }
 
 
-def _value_over_time(holdings: list[dict]) -> list[dict]:
+def _value_over_time(holdings: list[dict], base_currency: str = "USD") -> list[dict]:
     if not holdings:
         return []
 
@@ -156,10 +158,12 @@ def _value_over_time(holdings: list[dict]) -> list[dict]:
         sym = h["symbol"].upper()
         qty = float(h["quantity"])
         buy_date = h.get("buy_date")
+        currency_type = h.get("currency_type", "USD")
 
         holding_info[sym] = {
             "quantity": holding_info.get(sym, {}).get("quantity", 0) + qty,
-            "buy_date": buy_date
+            "buy_date": buy_date,
+            "currency_type": currency_type,
         }
 
         try:
@@ -168,7 +172,15 @@ def _value_over_time(holdings: list[dict]) -> list[dict]:
             if hist.empty:
                 continue
 
-            frames.append(hist["Close"].rename(sym))
+            close_series = hist["Close"].astype(float)
+            if currency_type.upper() != base_currency.upper():
+                fx_multiplier = get_exchange_rate(
+                    from_currency=currency_type,
+                    to_currency=base_currency,
+                )
+                close_series = close_series * fx_multiplier
+
+            frames.append(close_series.rename(sym))
 
         except Exception:
             continue
@@ -377,7 +389,8 @@ async def add_stock(request: Request, user: str = Depends(get_current_user)):
         quantity = data.get("quantity")
         price = data.get("price")
         buydate = data.get("buyDate")
-
+        currency_type = yf.Ticker(symbol).info.get("currency")
+        
         if not portfolio_id:
             raise HTTPException(status_code=400, detail="portfolioId is required")
         if not symbol:
@@ -415,6 +428,7 @@ async def add_stock(request: Request, user: str = Depends(get_current_user)):
                 "quantity": quantity,
                 "price": price,
                 "buy_date": buydate,
+                "currency_type" : currency_type,
                 "created_at": datetime.now(timezone.utc),
             }
         )
@@ -426,6 +440,7 @@ async def add_stock(request: Request, user: str = Depends(get_current_user)):
                 "quantity": quantity,
                 "price": price,
                 "buy_date": buydate,
+                "currency_type": currency_type
             }
         )
 
@@ -541,6 +556,10 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
 
         # Use shared utility to fetch portfolio and holdings
         portfolio, db_holdings = get_portfolio_with_holdings(portfolio_id, user)
+
+        # Get user's base currency from user_info collection (set at registration/profile)
+        user_info = user_info_collection.find_one({"email": user}) or {}
+        base_currency = (user_info.get("base_currency") or "USD").upper()
         
         if not db_holdings:
             return {
@@ -558,10 +577,18 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
             qty = float(h["quantity"])
             buy_price = float(h["price"])
             snap = _symbol_snapshot(h["symbol"])
+            asset_currency = h.get("currency_type", "USD")
 
             current_price = snap["current_price"] if snap["current_price"] else buy_price
-            current_value = qty * current_price
-            cost_basis = qty * buy_price
+            fx_multiplier = get_exchange_rate(
+                from_currency=asset_currency,
+                to_currency=base_currency,
+            )
+
+            current_price_usd = current_price * fx_multiplier
+            buy_price_usd = buy_price * fx_multiplier
+            current_value = qty * current_price_usd
+            cost_basis = qty * buy_price_usd#cost price (jisme buy kiya tha)
             pl_amount = current_value - cost_basis
             pl_pct = (pl_amount / cost_basis * 100) if cost_basis > 0 else 0.0
             day_change = current_value * (snap["price_change_pct"] / 100)
@@ -579,8 +606,12 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
                     "sector": snap["sector"],
                     "quantity": qty,
                     "avg_buy_price": round(buy_price, 2),
+                    "avg_buy_price_usd": round(buy_price_usd, 2),
                     "current_price": round(current_price, 2),
+                    "current_price_usd": round(current_price_usd, 2),
                     "current_value": round(current_value, 2),
+                    "currency_type": asset_currency,
+                    "fx_rate": round(fx_multiplier, 6),
                     "pl_amount": round(pl_amount, 2),
                     "pl_pct": round(pl_pct, 2),
                     "risk_score": snap["risk_score"],
@@ -634,6 +665,7 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
         result_data = {
             "portfolio_id": str(portfolio_id),
             "portfolio_name": portfolio_name,
+            "base_currency": base_currency,
             "summary": {
                 "total_value": round(total_value, 2),
                 "total_value_change": round(total_day_change, 2),
@@ -643,7 +675,7 @@ async def analyze_portfolio(request: Request, user: str = Depends(get_current_us
                 "portfolio_risk_score": round(portfolio_risk_score, 2),
                 "portfolio_risk_label": _risk_label(portfolio_risk_score),
             },
-            "value_over_time": _value_over_time(db_holdings),
+            "value_over_time": _value_over_time(db_holdings, base_currency),
             "risk_contribution": risk_contribution,
             "sector_allocation": sector_allocation,
             "holdings": rows,
