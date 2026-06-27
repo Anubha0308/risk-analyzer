@@ -448,7 +448,10 @@ function SellAdvice() {
                           Current Price
                         </div>
                         <div className="text-xs md:text-2xl font-bold text-[#0d171b] dark:text-white">
-                          ${prediction.current_price}
+                          {prediction.current_price}
+                        </div>
+                        <div className="text-xs md:text-sm text-[#4c809a] dark:text-slate-400 mb-1">
+                          {prediction.currency_type}
                         </div>
                       </div>
                       <div className="flex-row gap-2">

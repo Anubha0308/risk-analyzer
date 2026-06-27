@@ -305,6 +305,7 @@ function Oneportfolio() {
                 <tr>
                   <th className="p-3 border-b">Ticker</th>
                   <th className="p-3 border-b">Quantity</th>
+                  <th className="p-3 border-b">Currency</th>
                   <th className="p-3 border-b">Buy Price</th>
                   <th className="p-3 border-b">Total</th>
                   <th className="p-3 border-b">BuyDate</th>
@@ -331,7 +332,9 @@ function Oneportfolio() {
                         stock.quantity
                       )}
                     </td>
-
+                    <td className="p-3 border-b">
+                      {stock.currency_type}
+                      </td>
                     <td className="p-3 border-b">
                       {editingId === stock._id ? (
                         <input
@@ -341,12 +344,12 @@ function Oneportfolio() {
                           onChange={(e) => setNewStockPrice(e.target.value)}
                         />
                       ) : (
-                        `$${Number(stock.price).toFixed(2)}`
+                        `${Number(stock.price).toFixed(2)}`
                       )}
                     </td>
 
                     <td className="p-3 border-b">
-                      $
+                      
                       {(Number(stock.quantity) * Number(stock.price)).toFixed(
                         2,
                       )}
