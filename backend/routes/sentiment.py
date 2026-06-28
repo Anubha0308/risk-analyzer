@@ -30,7 +30,7 @@ def get_sentiment(symbol: str, user: str = Depends(get_current_user)):
             "sentiment_summary": "Insufficient news coverage",
         }
 
-    result = score_headlines(headlines)
+    result = score_headlines(headlines, symbol_upper)
 
     response = {
         "symbol": symbol_upper,
