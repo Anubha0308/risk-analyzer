@@ -23,11 +23,12 @@ def get_sentiment(symbol: str, user: str = Depends(get_current_user)):
     headlines = fetch_headlines(symbol_upper)
 
     if len(headlines) < _MIN_HEADLINES:
-        # Do NOT cache — maybe headlines will appear on next call
+        # Do NOT cache — headlines may appear on the next call
         return {
             "symbol": symbol_upper,
             "sentiment_score": None,
             "sentiment_summary": "Insufficient news coverage",
+            "headlines": [],
         }
 
     result = score_headlines(headlines, symbol_upper)
@@ -36,9 +37,10 @@ def get_sentiment(symbol: str, user: str = Depends(get_current_user)):
         "symbol": symbol_upper,
         "sentiment_score": result["sentiment_score"],
         "sentiment_summary": result["sentiment_summary"],
+        "headlines": headlines,
     }
 
-    # Only cache a successful score — null results should be retried next call
+    # Only cache a successful score — Groq failures should be retried next call
     if result["sentiment_score"] is not None:
         set_cache(cache_key, response, ttl=_SENTIMENT_TTL)
 

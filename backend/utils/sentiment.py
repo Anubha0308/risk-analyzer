@@ -94,17 +94,23 @@ def fetch_headlines(symbol: str) -> list:
             if not title:
                 continue
 
+            entry = {
+                "title": title,
+                "source": (content.get("provider") or {}).get("displayName") or None,
+                "url": (content.get("canonicalUrl") or {}).get("url") or None,
+            }
+
             tagged_syms = {
                 t.get("symbol", "").upper()
                 for t in content.get("tickers", [])
             }
 
             if keywords and _title_matches(title, keywords):
-                name_matched.append(title)
+                name_matched.append(entry)
             elif sym in tagged_syms:
-                ticker_tagged.append(title)
+                ticker_tagged.append(entry)
             else:
-                untagged.append(title)
+                untagged.append(entry)
 
         # Use the highest-precision pool that has enough headlines.
         # Each fallback step includes all items from higher tiers so we never
@@ -127,7 +133,10 @@ def score_headlines(headlines: list, symbol: str = "") -> dict:
     if not client:
         return {"sentiment_score": None, "sentiment_summary": None}
 
-    numbered = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(headlines))
+    numbered = "\n".join(
+        f"{i + 1}. {h['title'] if isinstance(h, dict) else h}"
+        for i, h in enumerate(headlines)
+    )
     sym_label = symbol.upper() if symbol else "this stock"
 
     try:

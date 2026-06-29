@@ -8,6 +8,18 @@ import VolatilityChart from "./volatility.jsx";
 import { GoArrowDown } from "react-icons/go";
 import { GoArrowUp } from "react-icons/go";
 
+const getSentimentStyle = (score) => {
+  if (score > 0.2) return "bg-violet-500/15 text-violet-600 dark:text-violet-400";
+  if (score < -0.2) return "bg-rose-500/15 text-rose-600 dark:text-rose-400";
+  return "bg-slate-500/10 text-slate-500 dark:text-slate-400";
+};
+
+const getSentimentLabel = (score) => {
+  if (score > 0.2) return "Positive";
+  if (score < -0.2) return "Negative";
+  return "Neutral";
+};
+
 const searchTickers = async (query) => {
   const res = await fetch(
     `${backend_url}/market/search?q=${encodeURIComponent(query)}&limit=6`,
@@ -36,6 +48,8 @@ function SellAdvice() {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [similarStocks, setSimilarStocks] = useState([]);
   const [similarLoading, setSimilarLoading] = useState(false);
+  const [sentiment, setSentiment] = useState(null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
   const userTypingRef = React.useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -217,6 +231,30 @@ function SellAdvice() {
       cancelled = true;
     };
   }, [isAuthenticated, symbol, displayName]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !symbol) return;
+    let cancelled = false;
+    setSentiment(null);
+    setSentimentLoading(true);
+    const fetchSentiment = async () => {
+      try {
+        const res = await fetch(
+          `${backend_url}/predict/sentiment/${encodeURIComponent(symbol)}`,
+          { method: "GET", credentials: "include" },
+        );
+        if (!cancelled && res.ok) {
+          setSentiment(await res.json());
+        }
+      } catch {
+        // sentiment is supplementary — never surface failures to the user
+      } finally {
+        if (!cancelled) setSentimentLoading(false);
+      }
+    };
+    fetchSentiment();
+    return () => { cancelled = true; };
+  }, [symbol, isAuthenticated]);
 
   if (checkingAuth) {
     return (
@@ -512,6 +550,117 @@ function SellAdvice() {
                     </div>
                   </div>
                 </div>
+
+                {(sentimentLoading || sentiment) && (
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="material-symbols-outlined text-violet-500 text-xl">newspaper</span>
+                      <h4 className="font-bold text-[#0d171b] dark:text-white">News Sentiment</h4>
+                      <span className="text-xs text-[#4c809a] dark:text-slate-500 ml-1">
+                        Independent signal — not blended into risk score
+                      </span>
+                    </div>
+
+                    {sentimentLoading ? (
+                      <div className="animate-pulse space-y-3">
+                        <div className="h-7 w-28 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                        <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded" />
+                      </div>
+                    ) : sentiment.sentiment_score !== null ? (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`text-sm font-bold px-3 py-1.5 rounded-full ${getSentimentStyle(sentiment.sentiment_score)}`}
+                          >
+                            {getSentimentLabel(sentiment.sentiment_score)}&nbsp;·&nbsp;
+                            {sentiment.sentiment_score > 0 ? "+" : ""}
+                            {sentiment.sentiment_score.toFixed(2)}
+                          </span>
+                        </div>
+                        {sentiment.sentiment_summary && (
+                          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                            {sentiment.sentiment_summary}
+                          </p>
+                        )}
+                        {(sentiment.headlines || []).length > 0 && (
+                          <ul className="space-y-2">
+                            {(sentiment.headlines || []).slice(0, 5).map((h, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-sm text-violet-400 dark:text-violet-500 mt-0.5 shrink-0">
+                                  article
+                                </span>
+                                <div className="min-w-0">
+                                  {h.url ? (
+                                    <a
+                                      href={h.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-[#0d171b] dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors leading-snug"
+                                    >
+                                      {h.title}
+                                    </a>
+                                  ) : (
+                                    <span className="text-sm text-[#0d171b] dark:text-white leading-snug">
+                                      {h.title}
+                                    </span>
+                                  )}
+                                  {h.source && (
+                                    <span className="text-xs text-[#4c809a] dark:text-slate-500 ml-2">
+                                      {h.source}
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                          <span className="material-symbols-outlined text-base text-slate-400">info</span>
+                          {(sentiment.headlines || []).length > 0
+                            ? "Insufficient company-specific signal to score sentiment — headlines shown for reference:"
+                            : "No recent company-specific headlines found."}
+                        </div>
+                        {(sentiment.headlines || []).length > 0 && (
+                          <ul className="space-y-2">
+                            {(sentiment.headlines || []).slice(0, 5).map((h, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-sm text-slate-400 mt-0.5 shrink-0">
+                                  article
+                                </span>
+                                <div className="min-w-0">
+                                  {h.url ? (
+                                    <a
+                                      href={h.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-[#0d171b] dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors leading-snug"
+                                    >
+                                      {h.title}
+                                    </a>
+                                  ) : (
+                                    <span className="text-sm text-[#0d171b] dark:text-white leading-snug">
+                                      {h.title}
+                                    </span>
+                                  )}
+                                  {h.source && (
+                                    <span className="text-xs text-[#4c809a] dark:text-slate-500 ml-2">
+                                      {h.source}
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
