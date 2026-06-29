@@ -16,3 +16,7 @@ def optimized_portfolio_key(email: str, portfolio_id: str):
 
 def sentiment_key(symbol: str):
     return f"sentiment:{symbol.upper()}"
+
+
+def chart_inference_key(symbol: str):
+    return f"chart_inference:{symbol.upper()}"

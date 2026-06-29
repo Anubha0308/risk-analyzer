@@ -202,3 +202,132 @@ def score_headlines(headlines: list, symbol: str = "") -> dict:
 
     except Exception:
         return {"sentiment_score": None, "sentiment_summary": None}
+
+
+def _summarize_chart(chart_data: dict) -> str:
+    """Condense last-30-day chart arrays into a readable text block for Groq.
+    Sends interpreted stats, never raw arrays."""
+    try:
+        def clean(arr):
+            return [x for x in (arr or []) if x is not None]
+
+        prices = clean(chart_data.get("price"))[-30:]
+        sma20  = clean(chart_data.get("sma_20"))[-30:]
+        sma50  = clean(chart_data.get("sma_50"))[-30:]
+        vols   = clean(chart_data.get("volatility"))[-30:]
+
+        if not prices or not sma20 or not sma50 or not vols:
+            return ""
+
+        cur_price, cur_sma20, cur_sma50, cur_vol = prices[-1], sma20[-1], sma50[-1], vols[-1]
+
+        rel20 = (cur_price - cur_sma20) / cur_sma20 * 100
+        rel50 = (cur_price - cur_sma50) / cur_sma50 * 100
+        sma_signal = "SMA-20 above SMA-50 (short-term uptrend)" if cur_sma20 > cur_sma50 else "SMA-20 below SMA-50 (short-term downtrend)"
+
+        crossover_note = ""
+        if len(sma20) >= 6 and len(sma50) >= 6:
+            if (sma20[-6] < sma50[-6]) and (cur_sma20 >= cur_sma50):
+                crossover_note = " A golden cross (SMA-20 crossing above SMA-50) occurred in the last 5 days."
+            elif (sma20[-6] > sma50[-6]) and (cur_sma20 <= cur_sma50):
+                crossover_note = " A death cross (SMA-20 crossing below SMA-50) occurred in the last 5 days."
+
+        early_vol = sum(vols[:5]) / 5 if len(vols) >= 5 else vols[0]
+        vol_trend = "rising" if cur_vol > early_vol * 1.15 else "falling" if cur_vol < early_vol * 0.85 else "broadly stable"
+        ann_vol = cur_vol * (252 ** 0.5) * 100
+
+        # Broader-trend context: did the most recent price diverge from where it spent most of the period?
+        days_above_sma50 = sum(1 for p, s in zip(prices, sma50) if p > s)
+        trend_context = ""
+        if days_above_sma50 >= 20 and cur_price < cur_sma50:
+            trend_context = (
+                f" Broader context: price was above the 50-day average for {days_above_sma50} of the last"
+                f" {len(prices)} sessions but has recently fallen below it."
+            )
+        elif days_above_sma50 <= len(prices) - 20 and cur_price > cur_sma50:
+            trend_context = (
+                f" Broader context: price was below the 50-day average for most of the last"
+                f" {len(prices)} sessions but has recently risen above it."
+            )
+
+        # Recent sharp move: 5-session price change >= 4%
+        recent_move = ""
+        if len(prices) >= 6:
+            pct5 = (cur_price - prices[-6]) / prices[-6] * 100
+            if pct5 <= -4:
+                recent_move = f" The price declined sharply ({abs(pct5):.1f}%) over the last 5 sessions."
+            elif pct5 >= 4:
+                recent_move = f" The price surged ({pct5:.1f}%) over the last 5 sessions."
+
+        return (
+            f"Price is {'%.1f' % abs(rel20)}% {'above' if rel20 >= 0 else 'below'} its 20-day moving average "
+            f"and {'%.1f' % abs(rel50)}% {'above' if rel50 >= 0 else 'below'} its 50-day moving average. "
+            f"{sma_signal}.{crossover_note}"
+            f"{trend_context}{recent_move} "
+            f"30-day annualized volatility is {ann_vol:.1f}% and has been {vol_trend} over the period."
+        )
+    except Exception:
+        return ""
+
+
+def infer_chart(symbol: str, chart_data: dict) -> dict:
+    """Call Groq with a chart summary and return a plain-English inference (max 3 sentences)."""
+    client = _get_client()
+    if not client:
+        return {"inference": None}
+
+    summary = _summarize_chart(chart_data)
+    if not summary:
+        return {"inference": None}
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a financial educator explaining stock chart patterns to a non-expert retail investor. "
+                        "HARD LIMIT: Your entire response must be exactly 2 or 3 sentences — never 4 or more. "
+                        "Count your sentences before you respond. Stop writing after the 3rd sentence.\n"
+                        "Rules:\n"
+                        "- Write in plain English. No jargon dumps. Spell out what terms mean if you use them.\n"
+                        "- Sentence 1 (one sentence only): describe the moving-average relationship — is short-term "
+                        "momentum strengthening or weakening? ONLY IF the summary contains the exact label "
+                        "'Broader context:', add a subordinate clause to this same sentence acknowledging the "
+                        "divergence, e.g. '...following a sharp recent drop' or '...despite holding above its "
+                        "averages for most of the period.' If 'Broader context:' does not appear in the summary, "
+                        "do NOT use 'despite', 'following a recent drop', or any similar qualifier.\n"
+                        "- Sentence 2: describe what the volatility trend means for the investor — "
+                        "is the stock becoming more or less turbulent, and what does that imply for near-term risk?\n"
+                        "- Sentence 3 (optional, only include if genuinely useful): note whether the trend picture "
+                        "and volatility read point the same direction or diverge — e.g. trend improving but vol also "
+                        "rising is a mixed signal worth flagging. Skip this sentence if it would just be filler.\n"
+                        "- Never repeat raw numbers from the summary. Interpret, don't recite.\n"
+                        "- Never make price predictions or buy/sell recommendations.\n"
+                        "- Write as a single continuous paragraph. No line breaks between sentences."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"30-day technical summary for {symbol}:\n\n"
+                        f"{summary}\n\n"
+                        "Write the interpretation now."
+                    ),
+                },
+            ],
+            max_tokens=160,
+            temperature=0.2,
+        )
+        text = (response.choices[0].message.content or "").strip()
+        # Hard cap: split on sentence boundaries and keep at most 3.
+        if text:
+            parts = re.split(r"(?<=[.!?])\s+(?=[A-Z])", text)
+            if len(parts) > 3:
+                text = " ".join(parts[:3])
+                if not text[-1] in ".!?":
+                    text += "."
+        return {"inference": text or None}
+    except Exception:
+        return {"inference": None}

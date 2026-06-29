@@ -50,6 +50,9 @@ function SellAdvice() {
   const [similarLoading, setSimilarLoading] = useState(false);
   const [sentiment, setSentiment] = useState(null);
   const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [showRiskExplainer, setShowRiskExplainer] = useState(false);
+  const [chartInference, setChartInference] = useState(null);
+  const [chartInferenceLoading, setChartInferenceLoading] = useState(false);
   const userTypingRef = React.useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -253,6 +256,31 @@ function SellAdvice() {
       }
     };
     fetchSentiment();
+    return () => { cancelled = true; };
+  }, [symbol, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !symbol) return;
+    let cancelled = false;
+    setChartInference(null);
+    setChartInferenceLoading(true);
+    const fetchInference = async () => {
+      try {
+        const res = await fetch(
+          `${backend_url}/predict/chart-inference/${encodeURIComponent(symbol)}`,
+          { method: "GET", credentials: "include" },
+        );
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          if (data?.inference) setChartInference(data.inference);
+        }
+      } catch {
+        // inference is supplementary — never surface failures
+      } finally {
+        if (!cancelled) setChartInferenceLoading(false);
+      }
+    };
+    fetchInference();
     return () => { cancelled = true; };
   }, [symbol, isAuthenticated]);
 
@@ -489,7 +517,7 @@ function SellAdvice() {
                           Current Price
                         </div>
                         <div className="text-xs md:text-2xl font-bold text-[#0d171b] dark:text-white">
-                          {prediction.current_price}
+                          ${prediction.current_price}
                         </div>
                         <div className="text-xs md:text-sm text-[#4c809a] dark:text-slate-400 mb-1">
                           {prediction.currency_type}
@@ -548,6 +576,35 @@ function SellAdvice() {
                         {((prediction.risk_score || 0) * 100).toFixed(1)}%
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => setShowRiskExplainer((v) => !v)}
+                      className="flex items-center gap-1 text-xs text-[#4c809a] dark:text-slate-500 hover:text-[#13a4ec] dark:hover:text-[#13a4ec] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">info</span>
+                      What does this score mean?
+                      <span className="material-symbols-outlined text-sm">
+                        {showRiskExplainer ? "expand_less" : "expand_more"}
+                      </span>
+                    </button>
+
+                    {showRiskExplainer && (
+                      <div className="text-xs text-left text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 ring-1 ring-slate-200 dark:ring-slate-700 space-y-2 w-full">
+                        <p>
+                          This score is the model's estimated probability that this stock will enter a{" "}
+                          <strong>high-volatility regime relative to its own recent history</strong> — not a
+                          comparison to the broader market or other stocks.
+                        </p>
+                        <p>
+                          <span className="font-semibold text-red-500">HIGH (&gt;65%)</span> elevated vol regime likely&nbsp;·&nbsp;
+                          <span className="font-semibold text-amber-500">MEDIUM (45–65%)</span> moderate signal&nbsp;·&nbsp;
+                          <span className="font-semibold text-green-500">LOW (&lt;45%)</span> calm conditions expected
+                        </p>
+                        <p className="text-[#4c809a] dark:text-slate-400">
+                          This is a volatility signal, not a price-direction prediction or a guarantee of a drop.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -684,6 +741,27 @@ function SellAdvice() {
                     />
                   </div>
                 </div>
+
+                {(chartInferenceLoading || chartInference) && (
+                  <div className="bg-white dark:bg-slate-800 px-6 py-4 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                    {chartInferenceLoading ? (
+                      <div className="animate-pulse flex items-center gap-3">
+                        <div className="h-5 w-5 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 flex-1 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-1/3 bg-slate-200 dark:bg-slate-700 rounded" />
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-[#13a4ec] text-base mt-0.5 shrink-0">
+                          auto_graph
+                        </span>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {chartInference}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
                   <div className="flex items-center justify-between gap-4 mb-4">
