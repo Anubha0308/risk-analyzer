@@ -10,6 +10,8 @@ from auth_utils import get_current_user
 from utils.portfolio_utils import get_portfolio_with_holdings
 from utils.market_data import get_price_history
 from utils.feature_engineering import get_features, FEATURES
+from database import user_info_collection
+from utils.exchange_price import get_exchange_rate
 
 
 router = APIRouter()
@@ -34,6 +36,7 @@ def _serialize_holding(holding: dict) -> dict:
         "quantity": holding["quantity"],
         "price": holding["price"],
         "buy_date": holding["buy_date"],
+        "currency_type": holding["currency_type"],
     }
     
 def portfolio_objective(weights, expected_returns, cov_matrix, risk_scores):
@@ -63,6 +66,9 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
         if not holdings:
             raise HTTPException(status_code=400, detail="Portfolio has no holdings to optimize")
         
+        
+        user_info = user_info_collection.find_one({"email": user}) or {}
+        base_currency = (user_info.get("base_currency") or "USD").upper()
         close_prices = {}
         expected_returns = []
         risk_scores = []
@@ -93,7 +99,8 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
                     status_code=400,
                     detail=f"Failed to get price history for {symbol}: {error_msg}"
                 )
-
+                
+                
             close_prices[symbol] = df["Close"]
 
             features_df, _, _, _, error_msg = get_features(symbol)
@@ -161,9 +168,16 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
         
         for h in serialized_holdings:
             symbol = h["symbol"].upper()
+            currency_type= h["currency_type"]
             latest_price = float(close_prices[symbol].iloc[-1])
-            h["current_price"] = round(latest_price, 2)
-            h["current_value"] = latest_price * h["quantity"]
+            fx_multiplier = get_exchange_rate(
+                from_currency=currency_type,
+                to_currency=base_currency,
+            )
+            converted_price = latest_price*fx_multiplier
+
+            h["current_price"] = round(converted_price, 2)
+            h["current_value"] = converted_price * h["quantity"]
             total_current_value += h["current_value"]
         
         suggestions = []
@@ -173,20 +187,27 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
             
             suggested_weight = optimized_weights[i]
 
-            difference = suggested_weight - current_weight
+            target_value = suggested_weight * total_current_value
 
-            if difference > 0.03:
-                action = "Increase"
-            elif difference < -0.03:
-                action = "Reduce"
+            amount_difference = target_value - h["current_value"]
+
+            shares_to_trade = amount_difference / h["current_price"]
+            shares_to_trade = round(shares_to_trade)
+            if shares_to_trade > 0.2:
+                action = f"Buy {shares_to_trade} shares"
+            elif shares_to_trade < -0.2:
+                action = f"Reduce {shares_to_trade} shares"
             else:
                 action = "Hold"
 
             suggestions.append({
                 "symbol": h["symbol"],
+                "base_currency": base_currency,
                 "current_weight": round(current_weight * 100, 2),
                 "suggested_weight": round(suggested_weight * 100, 2),
-                "difference": round(difference * 100, 2),
+                "target_value": round(target_value, 2),
+                "amount_difference": round(amount_difference, 2),
+                "currency_type" : h["currency_type"],
                 "action": action,
                 "risk_score": h["risk_score"],
                 "historical_return": round(h["historical_return"] * 100, 2),
@@ -196,6 +217,8 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
         return {
             "portfolio_id": portfolio_id,
             "optimization_method": "Mean-Variance Optimization with ML downside-risk penalty",
+            
+            "current_value": total_current_value,
             "suggestions": suggestions
         } #this is response returned to frontend after optimization
         
