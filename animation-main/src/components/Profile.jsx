@@ -276,7 +276,7 @@ function Profile() {
                   </select>
                 ) : (
                   <p className="mt-1 text-lg font-medium text-[#0d171b] dark:text-white">
-                    {userData.base_currency || "Not set"}
+                    {userData.base_currency}
                   </p>
                 )}
               </div>

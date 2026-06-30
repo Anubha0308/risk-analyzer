@@ -215,7 +215,14 @@ def is_price_history_fresh(df, max_stale_days=3):
         max_stale_days += 2 
 
     return days_stale <= max_stale_days   
-     
+
+def normalize_datetime_index(df):
+    if df is not None and isinstance(df.index, pd.DatetimeIndex):
+        if df.index.tz is not None:
+            df = df.copy()
+            df.index = df.index.tz_localize(None)
+    return df
+
 def get_price_history(symbol: str, period: str = "1y", min_rows=50):
     symbol = symbol.upper()
     cache_key = stock_history_key(symbol)
@@ -223,6 +230,7 @@ def get_price_history(symbol: str, period: str = "1y", min_rows=50):
     
     redis_cached_df = get_redis_cached_result(cache_key, min_rows)
     if redis_cached_df is not None and is_price_history_fresh(redis_cached_df, max_stale_days=1):
+        redis_cached_df = normalize_datetime_index(redis_cached_df)
         return redis_cached_df, None
 
     cached_df = get_cached_price_history(symbol, min_rows=min_rows)
@@ -236,18 +244,18 @@ def get_price_history(symbol: str, period: str = "1y", min_rows=50):
         )
 
         set_redis_cache(cache_key, cached_df)
+        cached_df = normalize_datetime_index(cached_df)
 
         return cached_df, None
 
     df, error_msg = download_price_history(symbol, period=period)
-
+    
     if df is None:
         return None, error_msg
 
-    
     save_price_history(symbol, df)
     set_redis_cache(cache_key, df)
-
+    df = normalize_datetime_index(df)
     return df, None
 
 def get_current_price_info(symbol: str, df: pd.DataFrame):

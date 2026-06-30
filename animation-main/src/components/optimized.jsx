@@ -8,6 +8,7 @@ function OptimizePortfolio() {
     const { id } = useParams();
     const [error, setError] = useState("");
     const [getting, setGetting] = useState(true);
+    const [currentValue, setCurrentValue] = useState(0);
     const [holdings, setHoldings] = useState([]);
     const navigate = useNavigate();
 
@@ -34,6 +35,7 @@ function OptimizePortfolio() {
             }
 
             setHoldings(result.suggestions);
+            setCurrentValue(result.current_value);
         } catch (err) {
             setError(err?.message || "Failed to fetch optimization results.");
         } finally {
@@ -71,8 +73,10 @@ function OptimizePortfolio() {
               <thead className="bg-gray-100 text-black font-semibold">
                 <tr>
                   <th className="p-3 border-b">Ticker</th>
+                  <th className="p-3 border-b">Currency Type</th>
                   <th className="p-3 border-b">Current Allocation</th>
                   <th className="p-3 border-b">Suggested Allocation</th>
+                  <th className="p-3 border-b">Target Value</th>
                   <th className="p-3 border-b">Action</th>
                   <th className="p-3 border-b">RiskScore</th>
                   <th className="p-3 border-b">Expected Return</th>
@@ -93,29 +97,32 @@ function OptimizePortfolio() {
                       <td className="p-3 border-b font-semibold">
                         {stock.symbol}
                       </td>
-
-                      <td className="p-3 border-b">{stock.current_weight}</td>
-
-                      <td className="p-3 border-b">{stock.suggested_weight}</td>
-
+                      <td className="p-3 border-b">{stock.currency_type}</td>
+                      <td className="p-3 border-b">{stock.current_weight }%</td>
+                      <td className="p-3 border-b">{stock.suggested_weight }%</td>
+                      <td className="p-3 border-b">{stock.target_value}<span>{stock.base_currency}</span></td>
                       <td className="p-3 border-b">{stock.action}</td>
 
                       <td className="p-3 border-b">
-                        {stock.risk_score != null ? stock.risk_score.toFixed(2) : "-"}
+                        {stock.risk_score != null ? ((stock.risk_score || 0) * 100).toFixed(1) : "-"}
                       </td>
 
                       <td className="p-3 border-b">
-                        {stock.expected_return != null ? stock.expected_return.toFixed(2) : "-"}
+                        {stock.expected_return != null ? stock.expected_return.toFixed(2) : "-" }%
                       </td>
 
                       <td className="p-3 border-b">
-                        {stock.historical_return != null ? stock.historical_return.toFixed(2) : "-"}
+                        {stock.historical_return != null ? stock.historical_return.toFixed(2) : "-" }%
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+            </div>
+            <div>
+              <p> Current Value</p>
+              <p>{currentValue}</p>
             </div>
             <div className="text-center text-sm text-gray-400">
                 Note: RiskScore is a measure of the stock's contribution to overall portfolio risk. Expected Return is based on our predictive model, while Historical Return is based on past performance.

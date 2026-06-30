@@ -11,6 +11,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import FXSignalPanel from "./FXsignal";
 
 function PortfolioAnalyze() {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ function PortfolioAnalyze() {
   const riskContribution = data.risk_contribution || [];
   const sectorAllocation = data.sector_allocation || [];
   const valueOverTime = data.value_over_time || [];
+  const currencyInsight = data.currency_insight || {};
 
   const colors = ["#ef4444", "#f97316", "#22c55e", "#3b82f6", "#a855f7", "#eab308"];
 
@@ -79,7 +81,7 @@ function PortfolioAnalyze() {
       </div>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">{name}</h1>
+        <p className="text-md md:text-3xl font-bold">{name}</p>
         <p className="text-gray-400">
           Track, analyze and optimize your investments
         </p>
@@ -253,7 +255,10 @@ function PortfolioAnalyze() {
           </button>
         </div>
       </div>
-
+      {/* //need to fix the alignment here  */}
+      <div className="mt-5 bg-[#0d1b2e] border border-slate-700 rounded-xl p-4 text-sm text-gray-300"> 
+        <FXSignalPanel currencyInsight={currencyInsight} />
+      </div>
       {/* Bottom Alert */}
       <div className="mt-5 bg-[#0d1b2e] border border-slate-700 rounded-xl p-4 text-sm text-gray-300">
         Your portfolio risk score is{" "}
