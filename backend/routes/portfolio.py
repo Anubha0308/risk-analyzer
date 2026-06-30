@@ -414,7 +414,6 @@ def _build_fx_recommendation(
     maturity   = signal["trend_maturity"]
     vol_label  = signal["vol_label"]
     r_sq       = signal["r_squared"]
-    gap_wide   = signal["gap_widening"]
     cross_days = signal["crossover_days_ago"]
 
     parts = []

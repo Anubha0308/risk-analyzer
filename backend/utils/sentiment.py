@@ -326,7 +326,7 @@ def infer_chart(symbol: str, chart_data: dict) -> dict:
             parts = re.split(r"(?<=[.!?])\s+(?=[A-Z])", text)
             if len(parts) > 3:
                 text = " ".join(parts[:3])
-                if not text[-1] in ".!?":
+                if text[-1] not in ".!?":
                     text += "."
         return {"inference": text or None}
     except Exception:

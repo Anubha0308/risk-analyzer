@@ -192,10 +192,12 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
             amount_difference = target_value - h["current_value"]
 
             shares_to_trade = amount_difference / h["current_price"]
-            shares_to_trade = round(shares_to_trade)
+           
             if shares_to_trade > 0.2:
-                action = f"Buy {shares_to_trade} shares"
+                shares_to_trade = abs(round(shares_to_trade))
+                action = f"Increase {shares_to_trade} shares"
             elif shares_to_trade < -0.2:
+                shares_to_trade = abs(round(shares_to_trade))
                 action = f"Reduce {shares_to_trade} shares"
             else:
                 action = "Hold"
@@ -218,7 +220,7 @@ def optimize_portfolio(portfolio_id: str, user: str = Depends(get_current_user))
             "portfolio_id": portfolio_id,
             "optimization_method": "Mean-Variance Optimization with ML downside-risk penalty",
             
-            "current_value": total_current_value,
+            "current_value": round(total_current_value,2),
             "suggestions": suggestions
         } #this is response returned to frontend after optimization
         
