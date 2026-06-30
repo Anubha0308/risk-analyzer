@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { backend_url } from "../config.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import Header from "../components/Header.jsx";
 import ErrorDisplay from "../components/ErrorDisplay.jsx";
 import RiskGauge from "./riskgauge.jsx";
 import PriceGraph from "./pricegraph.jsx";
@@ -37,8 +39,7 @@ function SellAdvice() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [prediction, setPrediction] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { isAuthenticated, loading: checkingAuth } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [selectedSymbol, setSelectedSymbol] = useState("");
@@ -138,37 +139,18 @@ function SellAdvice() {
   };
 
   useEffect(() => {
-    // Check authentication status
-    const checkAuth = async () => {
-      try {
-        const response = await fetch(`${backend_url}/me`, {
-          method: "GET",
-          credentials: "include",
-        });
-        if (response.ok) {
-          setIsAuthenticated(true);
-          // If authenticated and symbol exists, fetch prediction
-          if (symbol) {
-            handlePredict(symbol);
-            setDisplayName(name || "");
-            setSearchValue(name ? `${name} (${symbol})` : symbol);
-          } else {
-            setError(
-              "No stock symbol provided. Please go to the homepage to select a stock.",
-            );
-          }
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setCheckingAuth(false);
-      }
-    };
-    checkAuth();
+    if (!isAuthenticated || checkingAuth) return;
+    if (symbol) {
+      handlePredict(symbol);
+      setDisplayName(name || "");
+      setSearchValue(name ? `${name} (${symbol})` : symbol);
+    } else {
+      setError(
+        "No stock symbol provided. Please go to the homepage to select a stock.",
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol]);
+  }, [isAuthenticated, symbol]);
 
   useEffect(() => {
     let cancelled = false;
@@ -297,6 +279,10 @@ function SellAdvice() {
       className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen p-5 sm:p-10 antialiased"
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
+      <Header
+        onProfileClick={() => navigate("/profile")}
+        onNotificationsClick={() => navigate("/notifications")}
+      />
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
 
       <div

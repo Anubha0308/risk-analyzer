@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,9 @@ function Register() {
   const [passwordStrength, setPasswordStrength] = useState(0);
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = searchParams.get("next") || "/";
+  const { refetch } = useAuth();
 
   // Email validation
   const validateEmail = (email) => {
@@ -86,8 +90,8 @@ function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        // Registration successful, redirect to selladvice
-        navigate("/");
+        await refetch();
+        navigate(nextPath);
       } else {
         // Handle error from backend
         if (response.status === 409) {
@@ -121,7 +125,7 @@ function Register() {
             </span>
           </div>
           <h1 className="text-[#0d171b] tracking-tight text-[28px] font-bold leading-tight mb-2">
-            Welcome Back
+            Create Account
           </h1>
           <p className="text-[#4c809a] text-sm font-normal leading-normal max-w-[280px] mx-auto">
             Unlock AI-powered insights and manage your watchlists.

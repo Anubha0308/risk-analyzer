@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,9 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextPath = searchParams.get("next") || "/";
+  const { refetch } = useAuth();
 
   // Email validation
   const validateEmail = (email) => {
@@ -69,8 +73,8 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Login successful, redirect to home
-        navigate("/");
+        await refetch();
+        navigate(nextPath);
       } else {
         // Handle error from backend
         if (response.status === 404) {
