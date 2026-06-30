@@ -50,10 +50,18 @@ const searchTickers = async (query) => {
 };
 
 
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 const readCache = (symbol) => {
   try {
     const raw = localStorage.getItem(`riskcache:${symbol}`);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (Date.now() - entry.ts > CACHE_TTL) {
+      localStorage.removeItem(`riskcache:${symbol}`);
+      return null;
+    }
+    return entry; // { data, ts }
   } catch {
     return null;
   }
@@ -61,15 +69,27 @@ const readCache = (symbol) => {
 
 const writeCache = (symbol, data) => {
   try {
-    localStorage.setItem(`riskcache:${symbol}`, JSON.stringify(data));
+    localStorage.setItem(`riskcache:${symbol}`, JSON.stringify({ data, ts: Date.now() }));
   } catch {
     // localStorage full or unavailable — silent fail
   }
 };
 
+const timeAgo = (ts) => {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (mins > 0) return `${mins}m ago`;
+  return "just now";
+};
+
 const StockRiskCard = ({ symbol, name }) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [data, setData] = useState(() => readCache(symbol));
+  const [data, setData] = useState(() => readCache(symbol)?.data ?? null);
+  const [cachedAt, setCachedAt] = useState(() => readCache(symbol)?.ts ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -87,7 +107,9 @@ const StockRiskCard = ({ symbol, name }) => {
           recommendation: riskData.recommendation,
           current_price: riskData.current_price,
         };
+        const now = Date.now();
         setData(normalized);
+        setCachedAt(now);
         writeCache(symbol, normalized);
       } catch (err) {
         setError(err.message || "Failed to fetch");
@@ -169,7 +191,7 @@ const StockRiskCard = ({ symbol, name }) => {
             </span>
             <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#4c809a] dark:text-slate-500">
               <span className="material-symbols-outlined text-[12px]">lock</span>
-              cached
+              {cachedAt ? timeAgo(cachedAt) : "cached"}
             </span>
           </div>
           <div className="mt-auto">
