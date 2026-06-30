@@ -50,9 +50,26 @@ const searchTickers = async (query) => {
 };
 
 
+const readCache = (symbol) => {
+  try {
+    const raw = localStorage.getItem(`riskcache:${symbol}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (symbol, data) => {
+  try {
+    localStorage.setItem(`riskcache:${symbol}`, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable — silent fail
+  }
+};
+
 const StockRiskCard = ({ symbol, name }) => {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(() => readCache(symbol));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -64,12 +81,14 @@ const StockRiskCard = ({ symbol, name }) => {
         setLoading(true);
         setError(null);
         const riskData = await fetchRiskData(symbol);
-        setData({
+        const normalized = {
           risk: riskData.risk_level,
           risk_score: riskData.risk_score,
           recommendation: riskData.recommendation,
           current_price: riskData.current_price,
-        });
+        };
+        setData(normalized);
+        writeCache(symbol, normalized);
       } catch (err) {
         setError(err.message || "Failed to fetch");
       } finally {
@@ -113,6 +132,56 @@ const StockRiskCard = ({ symbol, name }) => {
   }
 
   if (!isAuthenticated) {
+    if (data) {
+      // Show cached scores with a subtle stale indicator
+      const cachedColor = getRiskColor(data.risk);
+      return (
+        <div
+          onClick={() => navigate("/login")}
+          className="cursor-pointer group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-5 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 hover:shadow-lg hover:ring-[#13a4ec]/50 dark:hover:ring-[#13a4ec]/50 transition-all duration-300"
+          style={{ fontFamily: "Manrope, sans-serif" }}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex flex-col">
+              <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">
+                {symbol}
+              </h3>
+              <p className="text-xs text-[#4c809a] dark:text-slate-400 mt-0.5">{name}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-[#4c809a] dark:text-slate-400">Price</div>
+              <div className="text-lg font-bold text-[#0d171b] dark:text-white">
+                {data.current_price != null ? `$${data.current_price}` : "-"}
+              </div>
+            </div>
+          </div>
+          <div className="mb-4 flex items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold ring-1 ring-inset ${
+                cachedColor === "red"
+                  ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-600/20"
+                  : cachedColor === "amber"
+                    ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 ring-amber-600/20"
+                    : "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 ring-green-600/20"
+              }`}
+            >
+              {getRiskLabel(data.risk)}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#4c809a] dark:text-slate-500">
+              <span className="material-symbols-outlined text-[12px]">lock</span>
+              cached
+            </span>
+          </div>
+          <div className="mt-auto">
+            <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Risk Score</div>
+            <div className="text-2xl font-bold text-[#0d171b] dark:text-white">
+              {(data.risk_score * 100).toFixed(1)}%
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         onClick={() => navigate("/login")}
