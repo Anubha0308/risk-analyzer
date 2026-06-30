@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { backend_url } from "../config.js";
 import ErrorDisplay from "./ErrorDisplay.jsx";
 import Header from "./Header.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const famousStocks = [
     { symbol: "TSLA", name: "Tesla Inc." },
@@ -49,34 +50,75 @@ const searchTickers = async (query) => {
 };
 
 
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+const readCache = (symbol) => {
+  try {
+    const raw = localStorage.getItem(`riskcache:${symbol}`);
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (Date.now() - entry.ts > CACHE_TTL) {
+      localStorage.removeItem(`riskcache:${symbol}`);
+      return null;
+    }
+    return entry; // { data, ts }
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (symbol, data) => {
+  try {
+    localStorage.setItem(`riskcache:${symbol}`, JSON.stringify({ data, ts: Date.now() }));
+  } catch {
+    // localStorage full or unavailable — silent fail
+  }
+};
+
+const timeAgo = (ts) => {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (days > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (mins > 0) return `${mins}m ago`;
+  return "just now";
+};
+
 const StockRiskCard = ({ symbol, name }) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const [data, setData] = useState(() => readCache(symbol)?.data ?? null);
+  const [cachedAt, setCachedAt] = useState(() => readCache(symbol)?.ts ?? null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         const riskData = await fetchRiskData(symbol);
-        // Extract risk score and level from the response
-        setData({
+        const normalized = {
           risk: riskData.risk_level,
           risk_score: riskData.risk_score,
           recommendation: riskData.recommendation,
           current_price: riskData.current_price,
-        });
+        };
+        const now = Date.now();
+        setData(normalized);
+        setCachedAt(now);
+        writeCache(symbol, normalized);
       } catch (err) {
-        console.error(`Error fetching data for ${symbol}:`, err);
         setError(err.message || "Failed to fetch");
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [symbol]);
+  }, [symbol, isAuthenticated]);
 
   const getRiskColor = (risk) => {
     if (risk === "HIGH") return "red";
@@ -98,6 +140,90 @@ const StockRiskCard = ({ symbol, name }) => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div
+        className="relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-5 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700"
+        style={{ fontFamily: "Manrope, sans-serif" }}
+      >
+        <div className="flex items-center justify-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#13a4ec]"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    if (data) {
+      // Show cached scores with a subtle stale indicator
+      const cachedColor = getRiskColor(data.risk);
+      return (
+        <div
+          onClick={() => navigate("/login")}
+          className="cursor-pointer group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-5 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 hover:shadow-lg hover:ring-[#13a4ec]/50 dark:hover:ring-[#13a4ec]/50 transition-all duration-300"
+          style={{ fontFamily: "Manrope, sans-serif" }}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex flex-col">
+              <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">
+                {symbol}
+              </h3>
+              <p className="text-xs text-[#4c809a] dark:text-slate-400 mt-0.5">{name}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-[#4c809a] dark:text-slate-400">Price</div>
+              <div className="text-lg font-bold text-[#0d171b] dark:text-white">
+                {data.current_price != null ? `$${data.current_price}` : "-"}
+              </div>
+            </div>
+          </div>
+          <div className="mb-4 flex items-center gap-2">
+            <span
+              className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold ring-1 ring-inset ${
+                cachedColor === "red"
+                  ? "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 ring-red-600/20"
+                  : cachedColor === "amber"
+                    ? "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 ring-amber-600/20"
+                    : "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 ring-green-600/20"
+              }`}
+            >
+              {getRiskLabel(data.risk)}
+            </span>
+            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-[#4c809a] dark:text-slate-500">
+              <span className="material-symbols-outlined text-[12px]">lock</span>
+              {cachedAt ? timeAgo(cachedAt) : "cached"}
+            </span>
+          </div>
+          <div className="mt-auto">
+            <div className="text-sm text-[#4c809a] dark:text-slate-400 mb-1">Risk Score</div>
+            <div className="text-2xl font-bold text-[#0d171b] dark:text-white">
+              {(data.risk_score * 100).toFixed(1)}%
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        onClick={() => navigate("/login")}
+        className="cursor-pointer group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-800/50 p-5 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 hover:shadow-lg hover:ring-[#13a4ec]/50 transition-all duration-300"
+        style={{ fontFamily: "Manrope, sans-serif" }}
+      >
+        <div className="flex flex-col items-start h-32 justify-center gap-2">
+          <h3 className="text-lg font-bold text-[#0d171b] dark:text-white leading-tight">
+            {symbol}
+          </h3>
+          <p className="text-xs text-[#4c809a] dark:text-slate-400">{name}</p>
+          <span className="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-[#13a4ec]">
+            <span className="material-symbols-outlined text-sm">lock</span>
+            Log in to see risk
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={handleCardClick}
@@ -106,7 +232,7 @@ const StockRiskCard = ({ symbol, name }) => {
       }`}
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
-      {loading ? (
+      {(loading || !data) && !error ? (
         <div className="flex items-center justify-center h-32">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#13a4ec]"></div>
         </div>
@@ -250,51 +376,9 @@ function Home() {
     };
   }, [symbol]);
 
-  const handleprofileClick = async () => {
-    try {
-      const response = await fetch(`${backend_url}/profile`, {
-        method: "GET",
-        credentials: "include", // Important for cookies
-      });
-      if (response.ok) {
-        //if user logged in
-        navigate("/profile");
-      } else {
-        // Handle error from backend
-        if (response.status === 401 || response.status === 404) {
-          setError("login to access profile");
-          // Clear error after 3 seconds
-          setTimeout(() => setError(""), 3000);
-        }
-      }
-    } catch {
-      setError("Network error. Please check if the server is running.");
-      setTimeout(() => setError(""), 3000);
-    }
-  };
+  const handleprofileClick = () => navigate("/profile");
 
-  const handlenotificationsClick = async () => {
-    try {
-      const response = await fetch(`${backend_url}/notifications`, {
-        method: "GET",
-        credentials: "include", // Important for cookies
-      });
-      if (response.ok) {
-        //if user logged in
-        navigate("/notifications");
-      } else {
-        // Handle error from backend
-        if (response.status === 401 || response.status === 404) {
-          setError("login to access notifications");
-          // Clear error after 3 seconds
-          setTimeout(() => setError(""), 3000);
-        }
-      }
-    } catch {
-      setError("Network error. Please check if the server is running.");
-      setTimeout(() => setError(""), 3000);
-    }
-  };
+  const handlenotificationsClick = () => navigate("/notifications");
 
   const handleIntraday = async () => {
     try {

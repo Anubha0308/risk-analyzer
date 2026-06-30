@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { backend_url } from "../config.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import Header from "../components/Header.jsx";
 import ErrorDisplay from "../components/ErrorDisplay.jsx";
 import RiskGauge from "./riskgauge.jsx";
 import PriceGraph from "./pricegraph.jsx";
 import VolatilityChart from "./volatility.jsx";
 import { GoArrowDown } from "react-icons/go";
 import { GoArrowUp } from "react-icons/go";
+
+const getSentimentStyle = (score) => {
+  if (score > 0.2) return "bg-violet-500/15 text-violet-600 dark:text-violet-400";
+  if (score < -0.2) return "bg-rose-500/15 text-rose-600 dark:text-rose-400";
+  return "bg-slate-500/10 text-slate-500 dark:text-slate-400";
+};
+
+const getSentimentLabel = (score) => {
+  if (score > 0.2) return "Positive";
+  if (score < -0.2) return "Negative";
+  return "Neutral";
+};
 
 const searchTickers = async (query) => {
   const res = await fetch(
@@ -25,8 +39,7 @@ function SellAdvice() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [prediction, setPrediction] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { isAuthenticated, loading: checkingAuth } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [searchValue, setSearchValue] = useState("");
   const [selectedSymbol, setSelectedSymbol] = useState("");
@@ -36,6 +49,11 @@ function SellAdvice() {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [similarStocks, setSimilarStocks] = useState([]);
   const [similarLoading, setSimilarLoading] = useState(false);
+  const [sentiment, setSentiment] = useState(null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [showRiskExplainer, setShowRiskExplainer] = useState(false);
+  const [chartInference, setChartInference] = useState(null);
+  const [chartInferenceLoading, setChartInferenceLoading] = useState(false);
   const userTypingRef = React.useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -121,37 +139,18 @@ function SellAdvice() {
   };
 
   useEffect(() => {
-    // Check authentication status
-    const checkAuth = async () => {
-      try {
-        const response = await fetch(`${backend_url}/me`, {
-          method: "GET",
-          credentials: "include",
-        });
-        if (response.ok) {
-          setIsAuthenticated(true);
-          // If authenticated and symbol exists, fetch prediction
-          if (symbol) {
-            handlePredict(symbol);
-            setDisplayName(name || "");
-            setSearchValue(name ? `${name} (${symbol})` : symbol);
-          } else {
-            setError(
-              "No stock symbol provided. Please go to the homepage to select a stock.",
-            );
-          }
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setCheckingAuth(false);
-      }
-    };
-    checkAuth();
+    if (!isAuthenticated || checkingAuth) return;
+    if (symbol) {
+      handlePredict(symbol);
+      setDisplayName(name || "");
+      setSearchValue(name ? `${name} (${symbol})` : symbol);
+    } else {
+      setError(
+        "No stock symbol provided. Please go to the homepage to select a stock.",
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol]);
+  }, [isAuthenticated, symbol]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +217,55 @@ function SellAdvice() {
     };
   }, [isAuthenticated, symbol, displayName]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !symbol) return;
+    let cancelled = false;
+    setSentiment(null);
+    setSentimentLoading(true);
+    const fetchSentiment = async () => {
+      try {
+        const res = await fetch(
+          `${backend_url}/predict/sentiment/${encodeURIComponent(symbol)}`,
+          { method: "GET", credentials: "include" },
+        );
+        if (!cancelled && res.ok) {
+          setSentiment(await res.json());
+        }
+      } catch {
+        // sentiment is supplementary — never surface failures to the user
+      } finally {
+        if (!cancelled) setSentimentLoading(false);
+      }
+    };
+    fetchSentiment();
+    return () => { cancelled = true; };
+  }, [symbol, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !symbol) return;
+    let cancelled = false;
+    setChartInference(null);
+    setChartInferenceLoading(true);
+    const fetchInference = async () => {
+      try {
+        const res = await fetch(
+          `${backend_url}/predict/chart-inference/${encodeURIComponent(symbol)}`,
+          { method: "GET", credentials: "include" },
+        );
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          if (data?.inference) setChartInference(data.inference);
+        }
+      } catch {
+        // inference is supplementary — never surface failures
+      } finally {
+        if (!cancelled) setChartInferenceLoading(false);
+      }
+    };
+    fetchInference();
+    return () => { cancelled = true; };
+  }, [symbol, isAuthenticated]);
+
   if (checkingAuth) {
     return (
       <div className="bg-[#f6f7f8] dark:bg-[#0d171b] min-h-screen flex items-center justify-center">
@@ -231,6 +279,10 @@ function SellAdvice() {
       className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen p-5 sm:p-10 antialiased"
       style={{ fontFamily: "Manrope, sans-serif" }}
     >
+      <Header
+        onProfileClick={() => navigate("/profile")}
+        onNotificationsClick={() => navigate("/notifications")}
+      />
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
 
       <div
@@ -451,7 +503,7 @@ function SellAdvice() {
                           Current Price
                         </div>
                         <div className="text-xs md:text-2xl font-bold text-[#0d171b] dark:text-white">
-                          {prediction.current_price}
+                          ${prediction.current_price}
                         </div>
                         <div className="text-xs md:text-sm text-[#4c809a] dark:text-slate-400 mb-1">
                           {prediction.currency_type}
@@ -510,8 +562,148 @@ function SellAdvice() {
                         {((prediction.risk_score || 0) * 100).toFixed(1)}%
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => setShowRiskExplainer((v) => !v)}
+                      className="flex items-center gap-1 text-xs text-[#4c809a] dark:text-slate-500 hover:text-[#13a4ec] dark:hover:text-[#13a4ec] transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">info</span>
+                      What does this score mean?
+                      <span className="material-symbols-outlined text-sm">
+                        {showRiskExplainer ? "expand_less" : "expand_more"}
+                      </span>
+                    </button>
+
+                    {showRiskExplainer && (
+                      <div className="text-xs text-left text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 ring-1 ring-slate-200 dark:ring-slate-700 space-y-2 w-full">
+                        <p>
+                          This score is the model's estimated probability that this stock will enter a{" "}
+                          <strong>high-volatility regime relative to its own recent history</strong> — not a
+                          comparison to the broader market or other stocks.
+                        </p>
+                        <p>
+                          <span className="font-semibold text-red-500">HIGH (&gt;65%)</span> elevated vol regime likely&nbsp;·&nbsp;
+                          <span className="font-semibold text-amber-500">MEDIUM (45–65%)</span> moderate signal&nbsp;·&nbsp;
+                          <span className="font-semibold text-green-500">LOW (&lt;45%)</span> calm conditions expected
+                        </p>
+                        <p className="text-[#4c809a] dark:text-slate-400">
+                          This is a volatility signal, not a price-direction prediction or a guarantee of a drop.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {(sentimentLoading || sentiment) && (
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="material-symbols-outlined text-violet-500 text-xl">newspaper</span>
+                      <h4 className="font-bold text-[#0d171b] dark:text-white">News Sentiment</h4>
+                      <span className="text-xs text-[#4c809a] dark:text-slate-500 ml-1">
+                        Independent signal — not blended into risk score
+                      </span>
+                    </div>
+
+                    {sentimentLoading ? (
+                      <div className="animate-pulse space-y-3">
+                        <div className="h-7 w-28 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                        <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-1/2 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-700 rounded" />
+                      </div>
+                    ) : sentiment.sentiment_score !== null ? (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`text-sm font-bold px-3 py-1.5 rounded-full ${getSentimentStyle(sentiment.sentiment_score)}`}
+                          >
+                            {getSentimentLabel(sentiment.sentiment_score)}&nbsp;·&nbsp;
+                            {sentiment.sentiment_score > 0 ? "+" : ""}
+                            {sentiment.sentiment_score.toFixed(2)}
+                          </span>
+                        </div>
+                        {sentiment.sentiment_summary && (
+                          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                            {sentiment.sentiment_summary}
+                          </p>
+                        )}
+                        {(sentiment.headlines || []).length > 0 && (
+                          <ul className="space-y-2">
+                            {(sentiment.headlines || []).slice(0, 5).map((h, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-sm text-violet-400 dark:text-violet-500 mt-0.5 shrink-0">
+                                  article
+                                </span>
+                                <div className="min-w-0">
+                                  {h.url ? (
+                                    <a
+                                      href={h.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-[#0d171b] dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors leading-snug"
+                                    >
+                                      {h.title}
+                                    </a>
+                                  ) : (
+                                    <span className="text-sm text-[#0d171b] dark:text-white leading-snug">
+                                      {h.title}
+                                    </span>
+                                  )}
+                                  {h.source && (
+                                    <span className="text-xs text-[#4c809a] dark:text-slate-500 ml-2">
+                                      {h.source}
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                          <span className="material-symbols-outlined text-base text-slate-400">info</span>
+                          {(sentiment.headlines || []).length > 0
+                            ? "Insufficient company-specific signal to score sentiment — headlines shown for reference:"
+                            : "No recent company-specific headlines found."}
+                        </div>
+                        {(sentiment.headlines || []).length > 0 && (
+                          <ul className="space-y-2">
+                            {(sentiment.headlines || []).slice(0, 5).map((h, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="material-symbols-outlined text-sm text-slate-400 mt-0.5 shrink-0">
+                                  article
+                                </span>
+                                <div className="min-w-0">
+                                  {h.url ? (
+                                    <a
+                                      href={h.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-[#0d171b] dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors leading-snug"
+                                    >
+                                      {h.title}
+                                    </a>
+                                  ) : (
+                                    <span className="text-sm text-[#0d171b] dark:text-white leading-snug">
+                                      {h.title}
+                                    </span>
+                                  )}
+                                  {h.source && (
+                                    <span className="text-xs text-[#4c809a] dark:text-slate-500 ml-2">
+                                      {h.source}
+                                    </span>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
@@ -535,6 +727,27 @@ function SellAdvice() {
                     />
                   </div>
                 </div>
+
+                {(chartInferenceLoading || chartInference) && (
+                  <div className="bg-white dark:bg-slate-800 px-6 py-4 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+                    {chartInferenceLoading ? (
+                      <div className="animate-pulse flex items-center gap-3">
+                        <div className="h-5 w-5 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 flex-1 bg-slate-200 dark:bg-slate-700 rounded" />
+                        <div className="h-4 w-1/3 bg-slate-200 dark:bg-slate-700 rounded" />
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <span className="material-symbols-outlined text-[#13a4ec] text-base mt-0.5 shrink-0">
+                          auto_graph
+                        </span>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {chartInference}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
                   <div className="flex items-center justify-between gap-4 mb-4">

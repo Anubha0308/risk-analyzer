@@ -23,6 +23,7 @@ from routes.notifications import router as notifications_router
 from routes.portfolio import router as portfolio_router
 from routes.optimize_portfolio import router as optimize_router
 from routes.intraday import router as intraday_router
+from routes.sentiment import router as sentiment_router
 
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
@@ -238,6 +239,8 @@ app.include_router(portfolio_router)
 app.include_router(optimize_router)
 
 app.include_router(intraday_router)
+
+app.include_router(sentiment_router)
 
 @app.get("/redis-test")
 def redis_test():

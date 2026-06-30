@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { backend_url } from "../config.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const Header = () => (
   <header className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0d171b]/95 backdrop-blur-md">
@@ -81,6 +82,7 @@ const WatchlistCard = ({ symbol, onRemove, isEditing }) => {
 
 function Profile() {
   const navigate = useNavigate();
+  const { refetch } = useAuth();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -110,9 +112,6 @@ function Profile() {
         setEditedFullName(data.full_name || "");
         setEditedBasecurrency(data.base_currency);
         setEditedWatchlist(data.watchlist || []);
-      } else if (response.status === 401) {
-        // Not logged in
-        setUserData(null);
       } else {
         const errData = await response.json().catch(() => ({}));
         setError(errData.detail || "Failed to load profile");
@@ -194,10 +193,10 @@ function Profile() {
         credentials: "include",
       });
     } catch (err) {
-      // Ignore error; just navigate away
       console.error("Logout error:", err);
     } finally {
       navigate("/");
+      refetch();
     }
   };
 
@@ -211,34 +210,6 @@ function Profile() {
         <main className="grow flex items-center justify-center">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#13a4ec]"></div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // Not logged in
-  if (!userData) {
-    return (
-      <div
-        className="bg-[#f6f7f8] dark:bg-[#0d171b] text-[#0d171b] dark:text-white min-h-screen flex flex-col antialiased"
-        style={{ fontFamily: "Manrope, sans-serif" }}
-      >
-        <Header />
-        <main className="grow flex items-center justify-center p-6">
-          <div className="text-center max-w-md">
-            <h1 className="text-3xl font-bold text-[#0d171b] dark:text-white mb-4">
-              Login to access profile
-            </h1>
-            <p className="text-[#4c809a] dark:text-slate-400 mb-6">
-              Please log in to view and manage your profile.
-            </p>
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-lg bg-[#13a4ec] hover:bg-[#0f8ac4] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#13a4ec]/20 transition-all"
-            >
-              Go to Login
-            </Link>
           </div>
         </main>
       </div>
