@@ -16,8 +16,9 @@ async def get_notifications(user: str = Depends(get_current_user)):
         notifs = list(
             notifications_col.find(
                 {"user_email": user, "is_read": False},  # ← only unread
-                {"_id": 1, "ticker": 1, "message": 1, "risk_score": 1,
-                 "is_read": 1, "created_at": 1}
+                {"_id": 1, "ticker": 1, "title": 1, "message": 1,
+                 "severity": 1, "triggered_signals": 1,
+                 "risk_score": 1, "is_read": 1, "created_at": 1}
             ).sort("created_at", -1).limit(20)
         )
 

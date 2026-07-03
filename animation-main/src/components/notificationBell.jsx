@@ -72,6 +72,12 @@ const NotificationBell = () => {
     }
   }
 
+  const severityClass = (s) => ({
+    high:   "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400",
+    medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+    low:    "bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-400",
+  })[s] || ""
+
   const timeAgo = (dateStr) => {
     const diff = Date.now() - new Date(dateStr).getTime()
     const mins  = Math.floor(diff / 60000)
@@ -133,11 +139,25 @@ const NotificationBell = () => {
                                  ${!n.is_read ? "bg-[#13a4ec]/5" : ""}`}>
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <span className="font-bold text-sm text-[#0d171b] dark:text-white"
-                            style={{ fontFamily: "Manrope, sans-serif" }}>
-                        {n.ticker}
-                      </span>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed"
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-[#0d171b] dark:text-white"
+                              style={{ fontFamily: "Manrope, sans-serif" }}>
+                          {n.ticker}
+                        </span>
+                        {n.severity && (
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase ${severityClass(n.severity)}`}
+                                style={{ fontFamily: "Manrope, sans-serif" }}>
+                            {n.severity}
+                          </span>
+                        )}
+                      </div>
+                      {n.title && (
+                        <p className="text-xs font-semibold text-[#0d171b] dark:text-slate-200 mt-0.5"
+                           style={{ fontFamily: "Manrope, sans-serif" }}>
+                          {n.title}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed whitespace-pre-line"
                          style={{ fontFamily: "Manrope, sans-serif" }}>
                         {n.message}
                       </p>

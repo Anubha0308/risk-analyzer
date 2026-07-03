@@ -24,30 +24,90 @@ except Exception:
 
 
 
-def already_notified(user_email: str, symbol: str, notif_type: str) -> bool:
+_SEVERITY_RANK = {"high": 3, "medium": 2, "low": 1}
+
+
+def _collect_signals(risk_score, rsi, macd, volatility, sma_20, sma_50, return_5d):
+    """Return all triggered signals as dicts with severity, key, and display label."""
+    signals = []
+    return_pct = round(return_5d * 100, 2)
+
+    # High severity
+    if risk_score > 0.6:
+        signals.append({"severity": "high",   "key": "high_risk",
+                        "label": f"Risk Score: {risk_score:.0%}"})
+    if rsi >= 70:
+        signals.append({"severity": "high",   "key": "rsi_overbought",
+                        "label": f"RSI Overbought ({rsi:.1f})"})
+    elif rsi <= 30:
+        signals.append({"severity": "high",   "key": "rsi_oversold",
+                        "label": f"RSI Oversold ({rsi:.1f})"})
+    if volatility >= 0.04:
+        signals.append({"severity": "high",   "key": "volatility_spike",
+                        "label": f"High Volatility ({volatility:.4f})"})
+
+    # Medium severity
+    if macd > 0:
+        signals.append({"severity": "medium", "key": "macd_bullish",  "label": "MACD Bullish"})
+    elif macd < 0:
+        signals.append({"severity": "medium", "key": "macd_bearish",  "label": "MACD Bearish"})
+    if sma_20 > sma_50:
+        signals.append({"severity": "medium", "key": "sma_bullish",   "label": "SMA Bullish Crossover"})
+    elif sma_20 < sma_50:
+        signals.append({"severity": "medium", "key": "sma_bearish",   "label": "SMA Bearish Crossover"})
+
+    # Low severity
+    if return_5d >= 0.05:
+        signals.append({"severity": "low",    "key": "return_up_5d",
+                        "label": f"Up {return_pct}% in 5 days"})
+    elif return_5d <= -0.05:
+        signals.append({"severity": "low",    "key": "return_down_5d",
+                        "label": f"Down {abs(return_pct)}% in 5 days"})
+
+    return signals
+
+
+_BULLISH_KEYS = {"macd_bullish", "sma_bullish", "return_up_5d"}
+_BEARISH_KEYS = {"macd_bearish", "sma_bearish", "return_down_5d"}
+
+
+def _build_title_and_severity(signals):
+    """Derive a single title and severity level from the full signal set."""
+    top = max(signals, key=lambda s: _SEVERITY_RANK[s["severity"]])
+    severity = top["severity"]
+    keys = {s["key"] for s in signals}
+
+    if severity == "high":
+        if "high_risk" in keys:
+            title = "High Risk Detected"
+        elif "rsi_overbought" in keys:
+            title = "RSI Alert: Overbought"
+        elif "rsi_oversold" in keys:
+            title = "RSI Alert: Oversold"
+        else:
+            title = "Volatility Alert"
+    else:
+        bullish = len(keys & _BULLISH_KEYS)
+        bearish = len(keys & _BEARISH_KEYS)
+        if bullish > bearish:
+            title = "Bullish Technical Setup"
+        elif bearish > bullish:
+            title = "Bearish Technical Setup"
+        else:
+            title = "Mixed Signals Detected"
+
+    return title, severity
+
+
+def _already_notified(user_email: str, symbol: str, signal_keys: list) -> bool:
+    """True if an identical signal set was already written for this user+ticker in the last 24 h."""
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     return notifications_collection.find_one({
-        "user_email": user_email,
-        "ticker":     symbol,
-        "type":       notif_type,
-        "created_at": {"$gte": since}
+        "user_email":        user_email,
+        "ticker":            symbol,
+        "triggered_signals": {"$all": signal_keys, "$size": len(signal_keys)},
+        "created_at":        {"$gte": since},
     }) is not None
-
-
-def save_notification(user_email: str, symbol: str, notif_type: str,
-                      message: str, risk_score: float):
-    if already_notified(user_email, symbol, notif_type):
-        return
-
-    notifications_collection.insert_one({
-        "user_email": user_email,
-        "ticker":     symbol,
-        "type":       notif_type,
-        "message":    message,
-        "risk_score": round(risk_score, 3),
-        "is_read":    False,
-        "created_at": datetime.now(timezone.utc)
-    })
 
 
 # ───────────────────────────────────────────────────────────
@@ -78,7 +138,7 @@ def predict_symbol(symbol: str) -> dict | None:
     if X.isnull().any().any():
         return None
 
-    risk_score = model.predict_proba(X)[0][1]
+    risk_score = float(model.predict_proba(X)[0][1])
     row        = features_df.iloc[0]
 
     return {
@@ -94,82 +154,39 @@ def predict_symbol(symbol: str) -> dict | None:
 
 
 def notify_user(user_email: str, symbol: str, data: dict):
-    risk_score    = data["risk_score"]
-    rsi           = data["rsi"]
-    macd          = data["macd"]
-    volatility    = data["volatility"]
-    sma_20        = data["sma_20"]
-    sma_50        = data["sma_50"]
-    return_5d     = data["return_5d"]
-    return_pct    = round(return_5d * 100, 2)
+    signals = _collect_signals(
+        data["risk_score"], data["rsi"], data["macd"],
+        data["volatility"], data["sma_20"], data["sma_50"], data["return_5d"],
+    )
 
-    # ── MARKET-BASED ───────────────────────────────────────
+    if not signals:
+        return
 
-    if risk_score > 0.6:
-        save_notification(
-            user_email, symbol, "high_risk",
-            f"{symbol} is entering an elevated volatility regime — model score: {risk_score:.0%}. Review your position sizing.",
-            risk_score
-        )
+    signal_keys = sorted(s["key"] for s in signals)
 
-    if rsi >= 70:
-        save_notification(
-            user_email, symbol, "rsi_overbought",
-            f"{symbol} RSI is at {rsi:.1f} — overbought territory. Potential pullback ahead.",
-            risk_score
-        )
-    elif rsi <= 30:
-        save_notification(
-            user_email, symbol, "rsi_oversold",
-            f"{symbol} RSI is at {rsi:.1f} — oversold territory. Potential recovery signal.",
-            risk_score
-        )
+    if _already_notified(user_email, symbol, signal_keys):
+        return
 
-    if macd > 0:
-        save_notification(
-            user_email, symbol, "macd_bullish",
-            f"{symbol} MACD is above signal line ({macd:.3f}) — bullish momentum signal.",
-            risk_score
-        )
-    elif macd < 0:
-        save_notification(
-            user_email, symbol, "macd_bearish",
-            f"{symbol} MACD is below signal line ({macd:.3f}) — bearish momentum signal.",
-            risk_score
-        )
+    title, severity = _build_title_and_severity(signals)
 
-    if sma_20 > sma_50:
-        save_notification(
-            user_email, symbol, "sma_bullish",
-            f"{symbol} short-term average (SMA20) is above medium-term (SMA50) — bullish trend signal.",
-            risk_score
-        )
-    elif sma_20 < sma_50:
-        save_notification(
-            user_email, symbol, "sma_bearish",
-            f"{symbol} short-term average (SMA20) is below medium-term (SMA50) — bearish trend signal.",
-            risk_score
-        )
+    n = len(signals)
+    if n == 1:
+        message = f"{symbol}: {signals[0]['label']}"
+    else:
+        bullets  = "\n".join(f"• {s['label']}" for s in signals)
+        message  = f"{symbol} triggered {n} signals:\n{bullets}"
 
-    if volatility >= 0.04:
-        save_notification(
-            user_email, symbol, "volatility_spike",
-            f"{symbol} is showing elevated volatility ({volatility:.4f}) — market may be unstable.",
-            risk_score
-        )
-
-    if return_5d >= 0.05:
-        save_notification(
-            user_email, symbol, "return_up_5d",
-            f"{symbol} moved up {return_pct}% in the last 5 trading days.",
-            risk_score
-        )
-    elif return_5d <= -0.05:
-        save_notification(
-            user_email, symbol, "return_down_5d",
-            f"{symbol} dropped {abs(return_pct)}% in the last 5 trading days.",
-            risk_score
-        )
+    notifications_collection.insert_one({
+        "user_email":        user_email,
+        "ticker":            symbol,
+        "title":             title,
+        "message":           message,
+        "severity":          severity,
+        "triggered_signals": signal_keys,
+        "risk_score":        round(data["risk_score"], 3),
+        "is_read":           False,
+        "created_at":        datetime.now(timezone.utc),
+    })
 
     
 
