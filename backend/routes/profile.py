@@ -28,6 +28,30 @@ async def get_profile(user: str = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/watchlist/{symbol}")
+async def add_to_watchlist(symbol: str, user: str = Depends(get_current_user)):
+    sym = symbol.strip().upper()
+    if not sym:
+        raise HTTPException(status_code=400, detail="symbol required")
+    result = user_info_collection.update_one(
+        {"email": user},
+        {"$addToSet": {"watchlist": sym}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return {"success": True, "symbol": sym}
+
+
+@router.delete("/watchlist/{symbol}")
+async def remove_from_watchlist(symbol: str, user: str = Depends(get_current_user)):
+    sym = symbol.strip().upper()
+    user_info_collection.update_one(
+        {"email": user},
+        {"$pull": {"watchlist": sym}}
+    )
+    return {"success": True}
+
+
 @router.put("/")
 async def update_profile(
     update_data: UpdateProfileRequest,

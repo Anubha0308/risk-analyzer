@@ -1,15 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react" // added useCallback
+import { useState, useEffect, useRef, useCallback } from "react"
 import { backend_url } from "../config.js"
+import { useAuth } from "../context/AuthContext.jsx"
 
 const NotificationBell = () => {
   const [open, setOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [generating, setGenerating] = useState(false)
+  const hasGenerated = useRef(false)
   const ref = useRef()
+  const { isAuthenticated } = useAuth()
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const res  = await fetch(`${backend_url}/notifications`, {
+      const res = await fetch(`${backend_url}/notifications`, {
         method: "GET",
         credentials: "include",
       })
@@ -19,13 +23,29 @@ const NotificationBell = () => {
     } catch (e) {
       console.error("Failed to fetch notifications", e)
     }
-  }, []);
+  }, [])
 
-  useEffect(() => { 
-    const startnoting = async()=>{
-      await fetchNotifications();
+  const generateAndFetch = useCallback(async () => {
+    if (hasGenerated.current) return
+    hasGenerated.current = true
+    setGenerating(true)
+    try {
+      await fetch(`${backend_url}/notifications/generate`, {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch (e) {
+      console.error("Failed to generate notifications", e)
     }
-    startnoting }, [fetchNotifications])
+    await fetchNotifications()
+    setGenerating(false)
+  }, [fetchNotifications])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      generateAndFetch()
+    }
+  }, [isAuthenticated, generateAndFetch])
 
   useEffect(() => {
     const handler = (e) => {
@@ -37,26 +57,31 @@ const NotificationBell = () => {
 
   const handleOpen = async () => {
     setOpen(prev => !prev)
-    if (!open && unreadCount > 0) {
-      await fetch(`${backend_url}/notifications/mark-read`, {
-        method:  "PATCH",
-        credentials: "include",
-      })
-      setUnreadCount(0)
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    if (!open) {
+      if (!hasGenerated.current) {
+        await generateAndFetch()
+      }
+      if (unreadCount > 0) {
+        await fetch(`${backend_url}/notifications/mark-read`, {
+          method:  "PATCH",
+          credentials: "include",
+        })
+        setUnreadCount(0)
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      }
     }
   }
 
   const timeAgo = (dateStr) => {
-  const past = new Date(dateStr).getTime();
-  const current = new Date().getTime(); 
-  const diff = current - past;
-  
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 3600000)}h ago`;
-};
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins  = Math.floor(diff / 60000)
+    const hours = Math.floor(mins / 60)
+    const days  = Math.floor(hours / 24)
+    if (days  > 0)  return `${days}d ago`
+    if (hours > 0)  return `${hours}h ago`
+    if (mins  > 0)  return `${mins}m ago`
+    return "just now"
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -64,7 +89,9 @@ const NotificationBell = () => {
         onClick={handleOpen}
         className="relative flex items-center justify-center h-9 w-9 rounded-lg bg-[#0d171b] dark:bg-slate-800 text-white hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
       >
-        <span className="material-symbols-outlined text-xl">notifications</span>
+        <span className={`material-symbols-outlined text-xl${generating ? " animate-pulse" : ""}`}>
+          notifications
+        </span>
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 h-4 w-4 bg-[#13a4ec] text-white
                            text-xs rounded-full flex items-center justify-center font-bold">
@@ -89,7 +116,12 @@ const NotificationBell = () => {
           </div>
 
           <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-            {notifications.length === 0 ? (
+            {generating ? (
+              <p className="text-center text-slate-400 py-10 text-sm"
+                 style={{ fontFamily: "Manrope, sans-serif" }}>
+                Checking your stocks…
+              </p>
+            ) : notifications.length === 0 ? (
               <p className="text-center text-slate-400 py-10 text-sm"
                  style={{ fontFamily: "Manrope, sans-serif" }}>
                 No notifications yet

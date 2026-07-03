@@ -54,6 +54,8 @@ function SellAdvice() {
   const [showRiskExplainer, setShowRiskExplainer] = useState(false);
   const [chartInference, setChartInference] = useState(null);
   const [chartInferenceLoading, setChartInferenceLoading] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const userTypingRef = React.useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -151,6 +153,30 @@ function SellAdvice() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, symbol]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !symbol) return;
+    fetch(`${backend_url}/profile`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) setBookmarked((data.watchlist || []).includes(symbol.toUpperCase()));
+      })
+      .catch(() => {});
+  }, [isAuthenticated, symbol]);
+
+  const toggleBookmark = async () => {
+    if (!symbol || bookmarkLoading) return;
+    setBookmarkLoading(true);
+    try {
+      const method = bookmarked ? "DELETE" : "POST";
+      const res = await fetch(
+        `${backend_url}/profile/watchlist/${encodeURIComponent(symbol)}`,
+        { method, credentials: "include" }
+      );
+      if (res.ok) setBookmarked(b => !b);
+    } catch {}
+    finally { setBookmarkLoading(false); }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -288,17 +314,36 @@ function SellAdvice() {
       <div
         className={`max-w-7xl mx-auto w-full bg-white dark:bg-slate-900/80 p-6 sm:p-14 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none ring-1 ring-slate-200 dark:ring-slate-800`}
       >
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-[#0d171b] dark:text-white mb-2">
-            {displayName ||
-              name ||
-              (symbol ? symbol.toUpperCase() : "Sell Advice")}
-          </h1>
-          <p className="text-[#4c809a] dark:text-slate-400 text-lg">
-            {symbol
-              ? `ML-based risk and price trends for ${symbol}`
-              : "AI-powered stock risk analysis"}
-          </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-[#0d171b] dark:text-white mb-2">
+              {displayName ||
+                name ||
+                (symbol ? symbol.toUpperCase() : "Sell Advice")}
+            </h1>
+            <p className="text-[#4c809a] dark:text-slate-400 text-lg">
+              {symbol
+                ? `ML-based risk and price trends for ${symbol}`
+                : "AI-powered stock risk analysis"}
+            </p>
+          </div>
+          {isAuthenticated && symbol && (
+            <button
+              onClick={toggleBookmark}
+              disabled={bookmarkLoading}
+              className={`flex items-center gap-1.5 shrink-0 mt-1 px-3 py-2 rounded-lg text-sm font-semibold transition-all border
+                ${bookmarked
+                  ? "bg-[#13a4ec]/10 text-[#13a4ec] border-[#13a4ec]/30 hover:bg-[#13a4ec]/20"
+                  : "bg-white dark:bg-slate-800 text-[#4c809a] border-slate-200 dark:border-slate-700 hover:border-[#13a4ec]/50 hover:text-[#13a4ec]"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              style={{ fontFamily: "Manrope, sans-serif" }}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {bookmarked ? "bookmark" : "bookmark_border"}
+              </span>
+              {bookmarked ? "Bookmarked" : "Bookmark"}
+            </button>
+          )}
         </div>
 
         {!isAuthenticated ? (

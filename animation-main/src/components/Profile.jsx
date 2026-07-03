@@ -87,9 +87,9 @@ function Profile() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedFullName, setEditedFullName] = useState("");
-  const [editedWatchlist, setEditedWatchlist] = useState([]);
   const [editedBasecurrency, setEditedBasecurrency] = useState("");
   const [newStockSymbol, setNewStockSymbol] = useState("");
+  const [watchlistError, setWatchlistError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -111,7 +111,6 @@ function Profile() {
         setUserData(data);
         setEditedFullName(data.full_name || "");
         setEditedBasecurrency(data.base_currency);
-        setEditedWatchlist(data.watchlist || []);
       } else {
         const errData = await response.json().catch(() => ({}));
         setError(errData.detail || "Failed to load profile");
@@ -128,7 +127,6 @@ function Profile() {
     setIsEditing(true);
     setEditedFullName(userData.full_name || "");
     setEditedBasecurrency(userData.base_currency);
-    setEditedWatchlist(userData.watchlist || []);
   };
 
   const handleCancel = () => {
@@ -136,20 +134,43 @@ function Profile() {
     if (!userData) return;
     setEditedFullName(userData.full_name || "");
     setEditedBasecurrency(userData.base_currency);
-    setEditedWatchlist(userData.watchlist || []);
-    setNewStockSymbol("");
   };
 
-  const handleAddStock = () => {
+  const handleAddStock = async () => {
     const symbol = newStockSymbol.trim().toUpperCase();
     if (!symbol) return;
-    if (editedWatchlist.includes(symbol)) return;
-    setEditedWatchlist([...editedWatchlist, symbol]);
-    setNewStockSymbol("");
+    if ((userData?.watchlist || []).includes(symbol)) {
+      setWatchlistError(`${symbol} is already in your watchlist`);
+      return;
+    }
+    setWatchlistError("");
+    try {
+      const res = await fetch(`${backend_url}/profile/watchlist/${encodeURIComponent(symbol)}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setUserData(prev => ({ ...prev, watchlist: [...(prev.watchlist || []), symbol] }));
+        setNewStockSymbol("");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setWatchlistError(d.detail || "Failed to add stock");
+      }
+    } catch {
+      setWatchlistError("Network error. Please try again.");
+    }
   };
 
-  const handleRemoveStock = (symbol) => {
-    setEditedWatchlist(editedWatchlist.filter((s) => s !== symbol));
+  const handleRemoveStock = async (symbol) => {
+    try {
+      const res = await fetch(`${backend_url}/profile/watchlist/${encodeURIComponent(symbol)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setUserData(prev => ({ ...prev, watchlist: (prev.watchlist || []).filter(s => s !== symbol) }));
+      }
+    } catch {}
   };
 
   const handleSave = async () => {
@@ -165,7 +186,6 @@ function Profile() {
         body: JSON.stringify({
           full_name: editedFullName,
           base_currency: editedBasecurrency,
-          watchlist: editedWatchlist,
         }),
       });
 
@@ -173,7 +193,6 @@ function Profile() {
         const updated = await response.json();
         setUserData(updated);
         setIsEditing(false);
-        setNewStockSymbol("");
       } else {
         const errData = await response.json().catch(() => ({}));
         setError(errData.detail || "Failed to save changes");
@@ -331,44 +350,46 @@ function Profile() {
           {/* Bookmarked Stocks Section */}
           <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-8 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 mb-10">
             <h2 className="text-2xl font-bold mb-6">Bookmarked Stocks</h2>
-            {isEditing && (
-              <div className="mb-6 flex gap-2">
-                <input
-                  type="text"
-                  value={newStockSymbol}
-                  onChange={(e) =>
-                    setNewStockSymbol(e.target.value.toUpperCase())
-                  }
-                  onKeyDown={(e) => e.key === "Enter" && handleAddStock()}
-                  placeholder="Enter stock symbol (e.g. AAPL)"
-                  className="flex-1 rounded-lg border-0 py-2 px-3 text-[#0d171b] shadow-sm ring-1 ring-inset ring-[#cfdfe7] placeholder:text-[#4c809a] focus:ring-2 focus:ring-inset focus:ring-[#13a4ec] bg-white dark:bg-slate-700 dark:text-white dark:ring-slate-600 sm:text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddStock}
-                  className="inline-flex items-center justify-center rounded-lg bg-[#13a4ec] hover:bg-[#0f8ac4] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#13a4ec]/20 transition-all"
-                >
-                  Add Stock
-                </button>
-              </div>
+
+            <div className="mb-5 flex gap-2">
+              <input
+                type="text"
+                value={newStockSymbol}
+                onChange={(e) => {
+                  setNewStockSymbol(e.target.value.toUpperCase());
+                  setWatchlistError("");
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleAddStock()}
+                placeholder="Add stock symbol (e.g. AAPL, RELIANCE.NS)"
+                className="flex-1 rounded-lg border-0 py-2 px-3 text-[#0d171b] shadow-sm ring-1 ring-inset ring-[#cfdfe7] placeholder:text-[#4c809a] focus:ring-2 focus:ring-inset focus:ring-[#13a4ec] bg-white dark:bg-slate-700 dark:text-white dark:ring-slate-600 sm:text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleAddStock}
+                className="inline-flex items-center justify-center rounded-lg bg-[#13a4ec] hover:bg-[#0f8ac4] px-4 py-2 text-sm font-bold text-white shadow-md shadow-[#13a4ec]/20 transition-all"
+              >
+                Add
+              </button>
+            </div>
+            {watchlistError && (
+              <p className="text-xs text-red-500 mb-4">{watchlistError}</p>
             )}
-            {editedWatchlist.length > 0 ? (
+
+            {(userData?.watchlist || []).length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {editedWatchlist.map((symbol) => (
+                {(userData.watchlist || []).map((symbol) => (
                   <WatchlistCard
                     key={symbol}
                     symbol={symbol}
                     onRemove={handleRemoveStock}
-                    isEditing={isEditing}
+                    isEditing={true}
                   />
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 px-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
                 <p className="text-[#4c809a] dark:text-slate-400">
-                  {isEditing
-                    ? "Add stocks to your watchlist"
-                    : "Your watchlist is empty."}
+                  Your watchlist is empty. Add stocks above or bookmark them from any analysis page.
                 </p>
               </div>
             )}
