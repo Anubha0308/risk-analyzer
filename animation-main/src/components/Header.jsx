@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import NotificationBell from "./notificationBell";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 const Header = ({ onProfileClick, onNotificationsClick }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { dark, toggle } = useTheme();
   const navLinks = [
     { to: "/market-overview", label: "Market Overview" },
     { to: "/about", label: "About" },
@@ -43,15 +45,23 @@ const Header = ({ onProfileClick, onNotificationsClick }) => {
           </nav>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[#0d171b] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            >
+              <span className="material-symbols-outlined text-lg">
+                {dark ? "light_mode" : "dark_mode"}
+              </span>
+            </button>
             <NotificationBell onClick={onNotificationsClick} />
             <button
               onClick={onProfileClick}
-              className=" md:flex h-10 w-10 items-center justify-center rounded-lg bg-[#0d171b] dark:bg-slate-800 px-5 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-[#0d171b] dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
               style={{ fontFamily: "Manrope, sans-serif" }}
+              aria-label="Profile"
             >
-              <span className="rounded-full bg-transparent flex items-center justify-center">
-                👤
-              </span>
+              <span className="material-symbols-outlined text-lg">person</span>
             </button>
             <button
               type="button"

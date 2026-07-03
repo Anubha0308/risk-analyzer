@@ -508,7 +508,7 @@ function Home() {
                     <button
                       onClick={handleAnalyze}
                       disabled={!selectedSymbol && !symbol.trim()}
-                      className="inline-flex items-center rounded-lg bg-[#13a4ec] hover:bg-[#0f8ac4] disabled:bg-slate-300 disabled:cursor-not-allowed px-6 py-2 text-sm font-bold text-white shadow-md shadow-[#13a4ec]/20 hover:shadow-lg transition-all"
+                      className="inline-flex items-center rounded-lg bg-[#13a4ec] hover:bg-[#0f8ac4] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed px-6 py-2 text-sm font-bold text-white shadow-md shadow-[#13a4ec]/20 hover:shadow-lg transition-all"
                     >
                       Analyze
                     </button>

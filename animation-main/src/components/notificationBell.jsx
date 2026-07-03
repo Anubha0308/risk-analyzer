@@ -93,7 +93,7 @@ const NotificationBell = () => {
     <div className="relative" ref={ref}>
       <button
         onClick={handleOpen}
-        className="relative flex items-center justify-center h-9 w-9 rounded-lg bg-[#0d171b] dark:bg-slate-800 text-white hover:bg-[#1a2830] dark:hover:bg-slate-700 transition-all"
+        className="relative flex items-center justify-center h-9 w-9 rounded-lg bg-slate-100 dark:bg-[#0d171b] text-[#0d171b] dark:text-white hover:bg-slate-200 dark:hover:bg-[#1a2830] transition-all"
       >
         <span className={`material-symbols-outlined text-xl${generating ? " animate-pulse" : ""}`}>
           notifications
