@@ -68,9 +68,9 @@ function Disclaimer() {
         onNotificationsClick={handlenotificationsClick}
       />
       <main className="grow">
-        <div className="max-w-7xl mx-auto mt-10 mb-10 text-center p-6 rounded-lg bg-[#0d171b] border border-[#4c5f8e]">
-          <h3 className="text-3xl font-bold text-[#0d171b] dark:text-white mb-10">
-            Portfolio Analysis Features:
+        <div className="max-w-7xl mx-auto mt-10 mb-10 text-center p-6 rounded-lg dark:bg-[#0d171b] bg-[#f6f7f8] border border-[#4c5f8e]">
+          <h3 className="text-3xl font-bold dark:text-white text-[#0d171b] mb-10">
+              Model Disclaimer:
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
             {[

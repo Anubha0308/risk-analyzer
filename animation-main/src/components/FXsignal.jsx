@@ -70,17 +70,8 @@ export default function FXSignalPanel({ currencyInsight }) {
   
 
   return (
-    <div
-      style={{
-        background: "#111827",
-        border: `1px solid ${theme.border}`,
-        borderRadius: 12,
-        padding: 20,
-        color: "#e5e9f0",
-        fontFamily: "system-ui, sans-serif",
-        minWidth: "100%",
-      }}
-    >
+    <div className={`bg-slate-50 dark:bg-[#0d171b] border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg p-4 text-sm text-[#4c809a] dark:text-slate-300`}>
+    
       {/* Header */}
       <div
         style={{
@@ -90,7 +81,7 @@ export default function FXSignalPanel({ currencyInsight }) {
           marginBottom: 16,
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 14, color: "#f9fafb" }}>
+        <span className="font-bold text-sm text-gray-600 dark:text-gray-400">
           FX Signal · USD/INR
         </span>
         <span
@@ -113,7 +104,7 @@ export default function FXSignalPanel({ currencyInsight }) {
         <div
           style={{
             flex: 1,
-            background: "#0d1525",
+            background: "transparent",
             borderRadius: 8,
             padding: "12px 14px",
           }}
@@ -135,7 +126,7 @@ export default function FXSignalPanel({ currencyInsight }) {
         <div
           style={{
             flex: 1,
-            background: "#0d1525",
+            background: "transparent",
             borderRadius: 8,
             padding: "12px 14px",
           }}
@@ -165,7 +156,7 @@ export default function FXSignalPanel({ currencyInsight }) {
 
       {/* Currency allocation bar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
+        <div className="bg-[#f8fafc] dark:bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
           <h3 className="font-bold mb-4">USD-INR Allocation</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
@@ -184,7 +175,7 @@ export default function FXSignalPanel({ currencyInsight }) {
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
+        <div className="bg-[#f8fafc] dark:bg-[#0d1b2e] border border-slate-700 rounded-xl p-5">
           <h3 className="font-bold mb-4">USD-INR P/L %</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
@@ -217,19 +208,15 @@ export default function FXSignalPanel({ currencyInsight }) {
         >
           {/* Trend strength */}
           <div
-            style={{
-              background: "#1c2b40",
-              borderRadius: 6,
-              padding: "5px 10px",
-              fontSize: 12,
-            }}
+            className="bg-slate-300 dark:bg-slate-700 text-slate-300 dark:text-slate-400 text-xs font-medium px-2 py-1 rounded"
           >
+          
             <span style={{ color: "#6b7280" }}>Strength · </span>
             <span
               style={{
                 fontWeight: 600,
                 textTransform: "capitalize",
-                color: "#e5e9f0",
+                color: "" + (signal.trend_strength === "strong" ? "#16a34a" : signal.trend_strength === "weak" ? "#ef4444" : "#6b7280"),
               }}
             >
               {signal.trend_strength}
@@ -238,13 +225,9 @@ export default function FXSignalPanel({ currencyInsight }) {
 
           {/* Maturity */}
           <div
-            style={{
-              background: "#1c2b40",
-              borderRadius: 6,
-              padding: "5px 10px",
-              fontSize: 12,
-            }}
+            className="bg-slate-300 dark:bg-slate-700 text-slate-300 dark:text-slate-400 text-xs font-medium px-2 py-1 rounded"
           >
+          
             <span style={{ color: "#6b7280" }}>Signal · </span>
             <span
               style={{
@@ -258,13 +241,9 @@ export default function FXSignalPanel({ currencyInsight }) {
 
           {/* Volatility */}
           <div
-            style={{
-              background: "#1c2b40",
-              borderRadius: 6,
-              padding: "5px 10px",
-              fontSize: 12,
-            }}
+            className="bg-slate-300 dark:bg-slate-700 text-slate-300 dark:text-slate-400 text-xs font-medium px-2 py-1 rounded"
           >
+          
             <span style={{ color: "#6b7280" }}>Vol · </span>
             <span
               style={{
@@ -278,16 +257,11 @@ export default function FXSignalPanel({ currencyInsight }) {
           </div>
 
           {/* Crossover age */}
-          <div
-            style={{
-              background: "#1c2b40",
-              borderRadius: 6,
-              padding: "5px 10px",
-              fontSize: 12,
-            }}
+          <div className="bg-slate-300 dark:bg-slate-700 text-slate-300 dark:text-slate-400 text-xs font-medium px-2 py-1 rounded"
+           
           >
             <span style={{ color: "#6b7280" }}>MA Cross · </span>
-            <span style={{ fontWeight: 600, color: "#e5e9f0" }}>
+            <span style={{ fontWeight: 600, color: "gray" }}>
               {signal.crossover_days_ago} days ago
             </span>
           </div>
@@ -295,7 +269,7 @@ export default function FXSignalPanel({ currencyInsight }) {
           {/* R² confidence bar */}
           <div
             style={{
-              background: "#1c2b40",
+              background: "#f8fafc dark:#0d1b2e",
               borderRadius: 6,
               padding: "5px 10px",
               fontSize: 12,
@@ -322,7 +296,7 @@ export default function FXSignalPanel({ currencyInsight }) {
                 }}
               />
             </div>
-            <span style={{ color: "#e5e9f0", fontFamily: "monospace" }}>
+            <span className="text-slate-600 dark:text-slate-400 font-mono">
               {((signal.r_squared ?? 0) * 100).toFixed(0)}%
             </span>
           </div>

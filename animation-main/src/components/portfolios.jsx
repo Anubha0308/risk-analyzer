@@ -14,6 +14,7 @@ import Instructions from "./Instructions";
 import { useState, useEffect, useCallback } from "react";
 
 import { useNavigate } from "react-router-dom";
+import { page, card, muted, btnPrimary, btnGhost, input } from "../themeClasses";
 
 function Portfolios() {
   const navigate = useNavigate();
@@ -149,12 +150,12 @@ function Portfolios() {
   return (
     <>
       {adding ? (
-        <div className="fixed inset-0 bg-[#0f1727] flex items-center justify-center">
+        <div className={`fixed inset-0 bg-slate-50 dark:bg-black/60 flex items-center justify-center z-50 ${page}`}>
           {error && (
             <ErrorDisplay message={error} onClose={() => setError("")} />
           )}
-          <div className="bg-[#0d171b] border border-[#4c5f8e] p-6 rounded-2xl flex flex-col items-center shadow-xl">
-            <h2 className="text-2xl font-bold mb-6 text-white">
+          <div className={`${card} p-6 flex flex-col items-center shadow-xl max-w-md w-full mx-4`}>
+            <h2 className="text-2xl font-bold mb-6 text-[#0d171b] dark:text-white">
               Create New Portfolio
             </h2>
 
@@ -164,11 +165,14 @@ function Portfolios() {
                 onChange={(e) => setName(e.target.value)}
                 type="text"
                 placeholder="Portfolio Name"
-                className="bg-[#0f1727] border border-[#4c5f8e] p-3 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
+                className={`${input} p-3 w-full`}
               />
 
               <div className="flex gap-3">
-                <button onClick={() => handleCreatePortfolio(name)}>
+                <button
+                  onClick={() => handleCreatePortfolio(name)}
+                  className={`${btnPrimary} px-4 py-2 flex-1`}
+                >
                   Create
                 </button>
 
@@ -177,6 +181,7 @@ function Portfolios() {
                     setAdding(false);
                     setName("");
                   }}
+                  className={`${btnGhost} px-4 py-2`}
                 >
                   Cancel
                 </button>
@@ -185,32 +190,32 @@ function Portfolios() {
           </div>
         </div>
       ) : (
-        <div className="min-h-screen dark:bg-[#0d171b]/95 backdrop-blur-md px-8 py-8">
+        <div className={`${page} px-8 py-8`}>
           {error && (
             <ErrorDisplay message={error} onClose={() => setError("")} />
           )}
           <div className="flex items-center justify-between mb-1 mt-2">
-            <button onClick={() => navigate(-1)}>← Back</button>
+            <button onClick={() => navigate(-1)} className={btnGhost}>← Back</button>
             <div className="flex items-center gap-2">
-            <div className="h-6 w-6 bg-[#13a3ea] rounded-full text-center" onClick={() => setShowInstructions(true)}>?</div> 
-            <button onClick={() => setAdding(true)}>+ New Portfolio</button>
+            <div className="h-6 w-6 bg-[#13a4ec] rounded-full text-center text-white text-sm cursor-pointer" onClick={() => setShowInstructions(true)}>?</div> 
+            <button onClick={() => setAdding(true)} className={btnPrimary + " px-4 py-2"}>+ New Portfolio</button>
             </div>
           </div>
 
           <div className="max-w-6xl mx-auto flex flex-col gap-6">
             <div className="mb-4">
-              <p className="text-4xl font-bold text-white">My Portfolios</p>
+              <p className="text-4xl font-bold text-[#0d171b] dark:text-white">My Portfolios</p>
 
-              <p className="text-gray-400 mt-1">
+              <p className={`${muted} mt-1`}>
                 Manage and analyze your investment portfolios
               </p>
             </div>
             {fetching ? (
-              <div className="text-white text-center mt-20">
+              <div className={`${muted} text-center mt-20`}>
                 Loading portfolios...
               </div>
             ) : portfolios.length === 0 ? (
-                <div className="text-white text-center mt-20">
+                <div className={`${muted} text-center mt-20`}>
                   No portfolios found. Create your first portfolio to get started!
                 </div>
               ) : (
@@ -218,38 +223,38 @@ function Portfolios() {
                 {portfolios.map((portfolio) => (
                   <div
                     key={portfolio._id}
-                    className="bg-[#0d171b] border border-[#4c5f8e] rounded-2xl p-6 cursor-pointer shadow-lg"
+                    className={`${card} p-6 cursor-pointer hover:ring-[#13a4ec]/40 transition-all`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         {renamingId === portfolio._id ? (
                           <div className="flex items-center gap-2">
                             <input
-                              className="bg-[#0f1727] border border-[#4c5f8e] p-2 rounded-lg text-white placeholder-gray-400 outline-none focus:border-[#13a3ea]"
+                              className={`${input} p-2 w-full`}
                               placeholder={portfolio.name}
                               value={rename}
                               onChange={(e) => setRename(e.target.value)}
                             />
                             <FaCheck
-                              className="text-green-400 mt-2 hover:text-green-500 transition-all cursor-pointer"
+                              className="text-emerald-600 dark:text-emerald-400 mt-2 hover:text-emerald-500 transition-all cursor-pointer"
                               onClick={() => handlerenamesave()}
                             />
                           </div>
                         ) : (
-                          <h3 className="text-xl font-bold text-white">
+                          <h3 className="text-xl font-bold text-[#0d171b] dark:text-white">
                             {portfolio.name}
                           </h3>
                         )}
                         <span>
                           <RenameIcon
-                            className="text-gray-400 mt-2 hover:text-[#13a3ea] transition-all cursor-pointer"
+                            className={`${muted} mt-2 hover:text-[#13a4ec] transition-all cursor-pointer`}
                             onClick={() => {
                               handleRename(portfolio._id, portfolio.name);
                             }}
                           />
                         </span>
                         <p
-                          className="text-gray-300 text-sm mt-2"
+                          className={`${muted} text-sm mt-2 cursor-pointer hover:text-[#13a4ec]`}
                           onClick={() =>
                             navigate(`/Oneportfolio/${portfolio._id}`)
                           }
@@ -258,7 +263,7 @@ function Portfolios() {
                         </p>
                       </div>
 
-                      <div className="w-12 h-12 rounded-full bg-[#13a3ea]/20 flex items-center justify-center text-[#13a3ea] text-xl">
+                      <div className="w-12 h-12 rounded-full bg-[#13a4ec]/20 flex items-center justify-center text-[#13a4ec] text-xl">
                         📊
                       </div>
                     </div>
@@ -272,14 +277,13 @@ function Portfolios() {
       )}
       {showInstructions && (
         
-        <div className="min-h-screen fixed inset-0 bg-transparent backdrop-blur-xs px-8 py-8 flex items-center justify-center z-50">
-          {/* backdrop-blur and whatever is in the background should remain visible but blurred out */}
+        <div className="min-h-screen fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-sm px-8 py-8 flex items-center justify-center z-50">
           <Instructions />
           <button
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-200 transition-all"
+            className={`absolute top-4 right-4 ${btnGhost} light:text-white dark:text-black`}
             onClick={() => setShowInstructions(false)}
           >
-            Close
+            <span className="material-symbols-outlined">close</span>
           </button>
         </div>
       )}

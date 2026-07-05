@@ -73,7 +73,7 @@ function Intraday() {
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
 
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-[2rem] border border-slate-200 bg-white/95 p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900/95 mb-8">
+        <div className="rounded-[2rem] border border-slate-200 bg-white dark:bg-slate-800/50 p-6 shadow-xl dark:border-slate-700 mb-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4c809a] dark:text-slate-400 mb-1">
@@ -99,7 +99,7 @@ function Intraday() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-slate-200 bg-white/95 p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900/95">
+        <div className="rounded-[2rem] border border-slate-200 bg-white dark:bg-slate-800/50 p-6 shadow-xl dark:border-slate-700">
           <div className="mb-5">
             <h2 className="text-xl font-semibold text-[#0d171b] dark:text-white">
               Price movement
@@ -149,7 +149,7 @@ function Intraday() {
                   <Line
                     type="monotone"
                     dataKey="price"
-                    stroke="#0ea5e9"
+                    stroke="#13a4ec"
                     dot={false}
                     strokeWidth={2}
                     name="Price"

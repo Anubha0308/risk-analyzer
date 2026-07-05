@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom"
 import { backend_url } from "../config";
 import ErrorDisplay from "./ErrorDisplay";
+import { page, card, muted, btnGhost, tableHead } from "../themeClasses";
 
 function OptimizePortfolio() {
     const { id } = useParams();
@@ -50,68 +51,70 @@ function OptimizePortfolio() {
     }, [handleOptimize]);//what is wrong here 
 
     return (
-        <div className="min-h-screen bg-[#0d171b]/95 backdrop-blur-md text-white p-6">
+        <div className={`${page} p-6`}>
             {error && <ErrorDisplay message={error} />}
             {getting ? (
               <div>
                 <button
                   onClick={() => navigate(-1)}
+                  className={btnGhost}
                 >
                   ← Back
                 </button>
-                <div className="text-center mt-2">Getting optimization results...</div>
+                <div className={`${muted} text-center mt-2`}>Getting optimization results...</div>
               </div>):(
                 <div className="space-y-6">
                 <button
                   onClick={() => navigate(-1)}
+                  className={btnGhost}
                 >
                   ← Back
                 </button>  
-                <div className="text-center">Optimization complete! Check your portfolio for updated allocations.</div>
-                <div className="overflow-x-auto rounded-lg border border-gray-700 bg-[#0d1b2e] p-6">
-            <table className="w-full border border-gray-200 text-left">
-              <thead className="bg-gray-100 text-black font-semibold">
+                <div className="text-center text-[#0d171b] dark:text-white">Optimization complete! Check your portfolio for updated allocations.</div>
+                <div className={`overflow-x-auto ${card} p-6`}>
+            <table className="w-full text-left">
+              <thead className={tableHead}>
                 <tr>
-                  <th className="p-3 border-b">Ticker</th>
-                  <th className="p-3 border-b">Currency Type</th>
-                  <th className="p-3 border-b">Current Allocation</th>
-                  <th className="p-3 border-b">Suggested Allocation</th>
-                  <th className="p-3 border-b">Target Value</th>
-                  <th className="p-3 border-b">Action</th>
-                  <th className="p-3 border-b">RiskScore</th>
-                  <th className="p-3 border-b">Expected Return</th>
-                  <th className="p-3 border-b">Historical Return</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Ticker</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Currency Type</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Current Allocation</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Suggested Allocation</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Target Value</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Action</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">RiskScore</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Expected Return</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Historical Return</th>
                 </tr>
               </thead>
 
               <tbody>
                 {holdings.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-4 text-center text-gray-400">
+                    <td colSpan={7} className={`p-4 text-center ${muted}`}>
                       No optimization suggestions available.
                     </td>
                   </tr>
                 ) : (
                   holdings.map((stock, index) => (
-                    <tr key={stock._id || `${stock.symbol}-${index}`} className="text-white">
-                      <td className="p-3 border-b font-semibold">
+                    <tr key={stock._id || `${stock.symbol}-${index}`} className="text-[#0d171b] dark:text-white border-b border-slate-200 dark:border-slate-700">
+                      <td className="p-3 font-semibold">
                         {stock.symbol}
                       </td>
-                      <td className="p-3 border-b">{stock.currency_type}</td>
-                      <td className="p-3 border-b">{stock.current_weight }%</td>
-                      <td className="p-3 border-b">{stock.suggested_weight }%</td>
-                      <td className="p-3 border-b">{stock.target_value}<span>{stock.base_currency}</span></td>
-                      <td className="p-3 border-b">{stock.action}</td>
+                      <td className="p-3">{stock.currency_type}</td>
+                      <td className="p-3">{stock.current_weight }%</td>
+                      <td className="p-3">{stock.suggested_weight }%</td>
+                      <td className="p-3">{stock.target_value}<span>{stock.base_currency}</span></td>
+                      <td className="p-3">{stock.action}</td>
 
-                      <td className="p-3 border-b">
+                      <td className="p-3">
                         {stock.risk_score != null ? ((stock.risk_score || 0) * 100).toFixed(1) : "-"}
                       </td>
 
-                      <td className="p-3 border-b">
+                      <td className="p-3">
                         {stock.expected_return != null ? stock.expected_return.toFixed(2) : "-" }%
                       </td>
 
-                      <td className="p-3 border-b">
+                      <td className="p-3">
                         {stock.historical_return != null ? stock.historical_return.toFixed(2) : "-" }%
                       </td>
                     </tr>
@@ -120,11 +123,11 @@ function OptimizePortfolio() {
               </tbody>
             </table>
             </div>
-            <div>
+            <div className="text-[#0d171b] dark:text-white">
               <p> Current Value</p>
               <p>{currentValue}</p>
             </div>
-            <div className="text-center text-sm text-gray-400">
+            <div className={`text-center text-sm ${muted}`}>
                 Note: RiskScore is a measure of the stock's contribution to overall portfolio risk. Expected Return is based on our predictive model, while Historical Return is based on past performance.
              </div>
             </div>

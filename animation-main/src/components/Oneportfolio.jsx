@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { backend_url } from "../config";
 import ErrorDisplay from "./ErrorDisplay";
+import { page, card, muted, btnPrimary, btnGhost, input, tableHead } from "../themeClasses";
 
 function Oneportfolio() {
   const { id } = useParams();
@@ -283,48 +284,48 @@ function Oneportfolio() {
     });
   };
   return (
-    <div className="min-h-screen bg-[#0d171b]/95 backdrop-blur-md text-white px-8 py-8 ">
+    <div className={`${page} px-8 py-8`}>
       <div className="flex items-center justify-between mb-1 mt-2">
-        <button onClick={() => navigate(-1)}>← Back</button>
-        <button onClick={() => setAdding(true)}>+ Add Stock</button>
+        <button onClick={() => navigate(-1)} className={btnGhost}>← Back</button>
+        <button onClick={() => setAdding(true)} className={btnPrimary + " px-4 py-2"}>+ Add Stock</button>
       </div>
       {error && <ErrorDisplay message={error} onClose={() => setError("")} />}
-      <div className="max-w-6xl mx-auto bg-[#0d171b] rounded-lg shadow flex flex-col items-center justify-center">
+      <div className={`max-w-6xl mx-auto ${card} flex flex-col items-center justify-center p-6`}>
         {getting ? (
-          <div className="text-gray-400 text-lg">
+          <div className={`${muted} text-lg`}>
             Loading portfolio details...
           </div>
         ) : holdings.length === 0 ? (
-          <div className="text-gray-400 text-lg">
+          <div className={`${muted} text-lg`}>
             No stocks in this portfolio.
           </div>
         ) : (
-          <div className="w-full overflow-x-auto rounded-lg border border-gray-700 p-4">
-            <table className="w-full border border-gray-200 text-left">
-              <thead className="bg-gray-100 text-black font-semibold">
+          <div className="w-full overflow-x-auto rounded-lg ring-1 ring-slate-200 dark:ring-slate-700 p-4">
+            <table className="w-full text-left">
+              <thead className={tableHead}>
                 <tr>
-                  <th className="p-3 border-b">Ticker</th>
-                  <th className="p-3 border-b">Quantity</th>
-                  <th className="p-3 border-b">Currency</th>
-                  <th className="p-3 border-b">Buy Price</th>
-                  <th className="p-3 border-b">Total</th>
-                  <th className="p-3 border-b">BuyDate</th>
-                  <th className="p-3 border-b">Actions</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Ticker</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Quantity</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Currency</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Buy Price</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Total</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">BuyDate</th>
+                  <th className="p-3 border-b border-slate-200 dark:border-slate-700">Actions</th>
                 </tr>
               </thead>
 
               <tbody>
                 {holdings.map((stock) => (
-                  <tr key={stock._id} className=" text-white">
-                    <td className="p-3 border-b font-semibold">
+                  <tr key={stock._id} className="text-[#0d171b] dark:text-white border-b border-slate-200 dark:border-slate-700">
+                    <td className="p-3 font-semibold">
                       {stock.symbol}
                     </td>
 
-                    <td className="p-3 border-b">
+                    <td className="p-3">
                       {editingId === stock._id ? (
                         <input
                           type="text"
-                          className="border rounded px-2 py-1 w-24"
+                          className={`${input} px-2 py-1 w-24`}
                           value={newStockQuantity}
                           onChange={(e) => setNewStockQuantity(e.target.value)}
                         />
@@ -332,14 +333,14 @@ function Oneportfolio() {
                         stock.quantity
                       )}
                     </td>
-                    <td className="p-3 border-b">
+                    <td className="p-3">
                       {stock.currency_type}
                       </td>
-                    <td className="p-3 border-b">
+                    <td className="p-3">
                       {editingId === stock._id ? (
                         <input
                           type="text"
-                          className="border rounded px-2 py-1 w-24"
+                          className={`${input} px-2 py-1 w-24`}
                           value={newStockPrice}
                           onChange={(e) => setNewStockPrice(e.target.value)}
                         />
@@ -348,18 +349,18 @@ function Oneportfolio() {
                       )}
                     </td>
 
-                    <td className="p-3 border-b">
+                    <td className="p-3">
                       
                       {(Number(stock.quantity) * Number(stock.price)).toFixed(
                         2,
                       )}
                     </td>
 
-                    <td className="p-3 border-b">
+                    <td className="p-3">
                       {editingId === stock._id ? (
                         <input
                           type="date"
-                          className="border rounded px-2 py-1"
+                          className={`${input} px-2 py-1`}
                           value={newStockDate}
                           onChange={(e) => setNewStockDate(e.target.value)}
                         />
@@ -368,18 +369,18 @@ function Oneportfolio() {
                       )}
                     </td>
 
-                    <td className="p-3 border-b">
+                    <td className="p-3">
                       {editingId === stock._id ? (
                         <div className="flex gap-2">
                           <button
-                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            className="bg-emerald-600 text-white px-3 py-1 rounded-lg hover:bg-emerald-700 text-sm"
                             onClick={() => handleUpdateStock(stock._id)}
                           >
                             Save
                           </button>
 
                           <button
-                            className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                            className="bg-slate-500 text-white px-3 py-1 rounded-lg hover:bg-slate-600 text-sm"
                             onClick={() => setEditingId(null)}
                           >
                             Cancel
@@ -387,11 +388,11 @@ function Oneportfolio() {
                         </div>
                       ) : (
                         <div className="flex gap-2">
-                          <button onClick={() => handleEditStock(stock._id)}>
+                          <button className={btnGhost} onClick={() => handleEditStock(stock._id)}>
                             Edit
                           </button>
 
-                          <button onClick={() => handleDeleteStock(stock._id)}>
+                          <button className="text-sm font-semibold text-red-600 dark:text-red-400 hover:opacity-80" onClick={() => handleDeleteStock(stock._id)}>
                             Delete
                           </button>
                         </div>
@@ -404,7 +405,7 @@ function Oneportfolio() {
             <div>
               <button
                 onClick={handleAnalyzePortfolio}
-                className="mt-4 ml-0.5 mb-4"
+                className={`${btnPrimary} mt-4 mb-4 px-5 py-2`}
               >
                 Analyze Portfolio{" "}
               </button>
@@ -414,9 +415,9 @@ function Oneportfolio() {
       </div>
 
       {adding && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-[#0d171b] p-6 rounded-lg border border-gray-200 shadow-lg w-80">
-            <h2 className="text-xl font-bold mb-4 text-white">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/80 flex items-center justify-center z-50">
+          <div className={`${card} p-6 w-80 max-w-[90vw]`}>
+            <h2 className="text-xl font-bold mb-4 text-[#0d171b] dark:text-white">
               Add Stock to Portfolio
             </h2>
 
@@ -424,7 +425,7 @@ function Oneportfolio() {
               <input
                 type="text"
                 placeholder="Stock Symbol"
-                className="border border-gray-300 rounded px-3 py-2 text-white"
+                className={`${input} px-3 py-2 w-full`}
                 value={newStockSymbol}
                 onChange={(e) => setNewStockSymbol(e.target.value)}
               />
@@ -432,7 +433,7 @@ function Oneportfolio() {
               <input
                 type="text"
                 placeholder="Quantity"
-                className="border border-gray-300 rounded px-3 py-2 text-white"
+                className={`${input} px-3 py-2 w-full`}
                 value={newStockQuantity}
                 onChange={(e) => setNewStockQuantity(e.target.value)}
               />
@@ -440,26 +441,26 @@ function Oneportfolio() {
               <input
                 type="text"
                 placeholder="Purchase Price"
-                className="border border-gray-300 rounded px-3 py-2 text-white"
+                className={`${input} px-3 py-2 w-full`}
                 value={newStockPrice}
                 onChange={(e) => setNewStockPrice(e.target.value)}
               />
-              <label htmlFor="start-date" className="text-white">
+              <label htmlFor="start-date" className="text-[#0d171b] dark:text-white text-sm">
                 BuyDate:
               </label>
               <input
                 id="start-date"
                 type="date"
                 value={newStockDate}
-                className="border border-gray-300 rounded px-3 py-2 text-white"
+                className={`${input} px-3 py-2 w-full`}
                 onChange={(e) => setNewStockDate(e.target.value)}
               />
             </div>
 
             <div className="flex gap-3 mt-5">
-              <button onClick={handlenewstock}>Add</button>
+              <button onClick={handlenewstock} className={`${btnPrimary} px-4 py-2 flex-1`}>Add</button>
 
-              <button onClick={() => setAdding(false)}>Cancel</button>
+              <button onClick={() => setAdding(false)} className={btnGhost}>Cancel</button>
             </div>
           </div>
         </div>

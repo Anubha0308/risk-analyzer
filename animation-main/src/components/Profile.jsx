@@ -170,7 +170,9 @@ function Profile() {
       if (res.ok) {
         setUserData(prev => ({ ...prev, watchlist: (prev.watchlist || []).filter(s => s !== symbol) }));
       }
-    } catch {}
+    } catch {
+      setError("Could not remove stock. Network error.");
+    }
   };
 
   const handleSave = async () => {

@@ -174,7 +174,9 @@ function SellAdvice() {
         { method, credentials: "include" }
       );
       if (res.ok) setBookmarked(b => !b);
-    } catch {}
+    } catch {
+      setError("Could not add to bookmark. Network error.");
+    }
     finally { setBookmarkLoading(false); }
   };
 
