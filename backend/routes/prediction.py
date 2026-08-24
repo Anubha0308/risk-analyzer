@@ -22,13 +22,13 @@ MODEL_PATH = os.path.join(BASE_DIR, "model", "stock_risk_model.pkl")
 
 try:
     if not os.path.exists(MODEL_PATH):
-        print(f"❌ Model file not found at: {MODEL_PATH}")
+        print(f"Model file not found at: {MODEL_PATH}")
         model = None
     else:
         model = joblib.load(MODEL_PATH)
-        print(f"✅ Model loaded successfully from: {MODEL_PATH}")
+        print(f"Model loaded successfully from: {MODEL_PATH}")
 except Exception as e:
-    print("❌ Failed to load ML model")
+    print("Failed to load ML model")
     print(e)
     model = None
 

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 
-login_attempts = {}
+login_attempts = {}#using dictionary we maintain user_email and the corresponding number of attempts 
 
 MAX_ATTEMPTS = 5
 LOCK_TIME_MINUTES = 5
